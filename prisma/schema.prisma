@@ -19,8 +19,8 @@ model User {
 
 model Place {
   id          Int      @id @default(autoincrement())
-  title       String 
-  address     String
+  title       String    
+  address     String  
   category    String
   telephone   String?
   review      Review[]
@@ -30,6 +30,7 @@ model Review {
   id          Int       @id @default(autoincrement())
   userId      Int     
   placeId     Int   
+  description String
   user        User      @relation(fields: [userId], references: [id])
   place       Place     @relation(fields: [placeId], references: [id])
 }
