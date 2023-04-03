@@ -23,6 +23,7 @@ model Place {
   address     String  
   category    String
   telephone   String?
+  stars       Float?   
   review      Review[]
 }
 
@@ -31,6 +32,7 @@ model Review {
   userId      Int     
   placeId     Int   
   description String
+  stars       Float?     
   user        User      @relation(fields: [userId], references: [id])
   place       Place     @relation(fields: [placeId], references: [id])
 }
