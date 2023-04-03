@@ -10,4 +10,11 @@ export class PlacesController {
     const place = await this.placeService.getPlace(places);
     return place;
   }
+
+  @Get('/:placeTitle')
+  async getPlaces(@Param('placeTitle') placeTitle: string) {
+    const places = this.placeService.getPlaces(placeTitle);
+
+    return places;
+  }
 }
