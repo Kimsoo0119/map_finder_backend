@@ -18,7 +18,7 @@ export class PlacesService {
   private readonly naverSearchApiUrl = process.env.NAVER_SEARCH_URL;
   private readonly crawlServerUrl = process.env.CRAWL_SERVER_URL;
 
-  async getPlace(place: PlaceDto): Promise<PlaceInformation> {
+  async getPlaceWithCrawl(place: PlaceDto): Promise<PlaceInformation> {
     try {
       const { title, address } = place;
       const selectedPlace: PlaceInformation =
@@ -27,12 +27,17 @@ export class PlacesService {
           address,
         });
 
-      if (!selectedPlace) {
-        const selectedPlace: PlaceInformation =
-          await this.placesRepository.createPlace(place);
+      // console.log(`${this.crawlServerUrl}/a`);
 
-        return selectedPlace;
-      }
+      // const response = await axios.get(`${this.crawlServerUrl}/${title}`);
+      // console.log(response);
+
+      // if (!selectedPlace) {
+      //   const selectedPlace: PlaceInformation =
+      //     await this.placesRepository.createPlace(place);
+
+      //   return selectedPlace;
+      // }
 
       return;
     } catch (error) {
@@ -40,7 +45,7 @@ export class PlacesService {
     }
   }
 
-  async getPlaces(placeTitle: string): Promise<PlaceInformation[]> {
+  async getPlacesWithNaver(placeTitle: string): Promise<PlaceInformation[]> {
     const places: PlaceInformation[] = await this.sendNaverSearchApi(
       placeTitle,
     );

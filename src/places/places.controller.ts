@@ -7,17 +7,16 @@ import { PlaceInformation } from './interface/places.interface';
 export class PlacesController {
   constructor(private readonly placeService: PlacesService) {}
   @Get('/:placeTitle')
-  async getPlaces(
+  async getPlacesWithNaver(
     @Param('placeTitle') placeTitle: string,
   ): Promise<PlaceInformation[]> {
-    const places: PlaceInformation[] = await this.placeService.getPlaces(
-      placeTitle,
-    );
+    const places: PlaceInformation[] =
+      await this.placeService.getPlacesWithNaver(placeTitle);
     return places;
   }
   @Get('/')
-  async getPlace(@Query() places: PlaceDto) {
-    const place = await this.placeService.getPlace(places);
+  async getPlaceWithCrawl(@Query() places: PlaceDto) {
+    const place = await this.placeService.getPlaceWithCrawl(places);
     return place;
   }
 }

@@ -23,8 +23,19 @@ model Place {
   address     String  
   category    String
   telephone   String?
-  stars       Float?   
+  stars       Float?
+  naverStars  Float?
+  reviewers   Int?   
   review      Review[]
+  naverReview NaverReview[]
+}
+
+model NaverReview {
+  id          Int       @id @default(autoincrement())
+  placeId     Int
+  nickname    String
+  discription String
+  place       Place     @relation(fields: [placeId], references: [id])
 }
 
 model Review {
