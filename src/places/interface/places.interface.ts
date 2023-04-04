@@ -5,6 +5,8 @@ export interface PlaceInformation {
   telephone?: string;
   starts?: number;
   id?: number;
+  mapX?: number;
+  mapY?: number;
 }
 
 export interface PlaceSummary {
