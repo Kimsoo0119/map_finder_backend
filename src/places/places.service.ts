@@ -4,7 +4,6 @@ import { PlaceDto } from './dto/place.dto';
 import { PlaceInformation, PlaceSummary } from './interface/places.interface';
 import { parseStringPromise } from 'xml2js';
 import { CrawledNaverReview } from 'src/common/interface/common-interface';
-import { ReviewsRepository } from 'src/reviews/repository/reviews.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 const headers = {
@@ -14,10 +13,7 @@ const headers = {
 
 @Injectable()
 export class PlacesService {
-  constructor(
-    private readonly reviewsRepository: ReviewsRepository,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   private readonly naverSearchApiUrl = process.env.NAVER_SEARCH_URL;
   private readonly crawlServerUrl = process.env.CRAWL_SERVER_URL;
