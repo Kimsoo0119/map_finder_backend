@@ -1,13 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios from 'axios';
 import { PlaceDto } from './dto/place.dto';
-import { PlaceInformation } from './interface/places.interface';
-import { PlacesRepository } from './repository/places.repository';
+import { PlaceInformation, PlaceSummary } from './interface/places.interface';
 import { parseStringPromise } from 'xml2js';
-import { title } from 'process';
 import { CrawledNaverReview } from 'src/common/interface/common-interface';
-import { Place } from '@prisma/client';
 import { ReviewsRepository } from 'src/reviews/repository/reviews.repository';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 const headers = {
   'X-Naver-Client-Id': process.env.CLIENT_ID,
@@ -17,8 +15,8 @@ const headers = {
 @Injectable()
 export class PlacesService {
   constructor(
-    private readonly placesRepository: PlacesRepository,
     private readonly reviewsRepository: ReviewsRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   private readonly naverSearchApiUrl = process.env.NAVER_SEARCH_URL;
@@ -27,11 +25,10 @@ export class PlacesService {
   async getPlaceWithCrawl(place: PlaceDto): Promise<PlaceInformation> {
     try {
       const { title, address } = place;
-      const selectedPlace: PlaceInformation =
-        await this.placesRepository.getPlace({
-          title,
-          address,
-        });
+      const selectedPlace: PlaceInformation = await this.getPlace({
+        title,
+        address,
+      });
       const { naverReviewerCounts, naverStars, reviews } = await axios
         .get<CrawledNaverReview>(`${this.crawlServerUrl}/${title}`)
         .then((res) => res.data);
@@ -42,8 +39,9 @@ export class PlacesService {
         naverStars,
       };
 
-      const createdPlace: PlaceInformation =
-        await this.placesRepository.createPlace(crawledPlace);
+      const createdPlace: PlaceInformation = await this.createPlace(
+        crawledPlace,
+      );
 
       if (createdPlace.id) {
       }
@@ -103,5 +101,40 @@ export class PlacesService {
       mapX: place.mapx,
       mapY: place.mapy,
     };
+  }
+
+  private async getPlace(place: PlaceSummary): Promise<PlaceInformation> {
+    try {
+      const selectedPlace: PlaceInformation = await this.prisma.place.findFirst(
+        {
+          where: { ...place },
+        },
+      );
+
+      return selectedPlace;
+    } catch (error) {
+      throw new InternalServerErrorException({
+        location: 'getPlace',
+        error,
+        message: '알 수 없는 서버 에러입니다.',
+      });
+    }
+  }
+  private async createPlace(
+    place: PlaceInformation,
+  ): Promise<PlaceInformation> {
+    try {
+      const selectedPlace: PlaceInformation = await this.prisma.place.create({
+        data: place,
+      });
+
+      return selectedPlace;
+    } catch (error) {
+      throw new InternalServerErrorException({
+        location: 'createPlace',
+        error,
+        message: '알 수 없는 서버 에러입니다.',
+      });
+    }
   }
 }
