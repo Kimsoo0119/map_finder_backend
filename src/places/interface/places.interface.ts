@@ -7,6 +7,8 @@ export interface PlaceInformation {
   id?: number;
   mapX?: number;
   mapY?: number;
+  naverReviewerCounts?: string;
+  naverStars?: string;
 }
 
 export interface PlaceSummary {

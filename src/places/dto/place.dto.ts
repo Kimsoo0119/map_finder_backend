@@ -16,4 +16,12 @@ export class PlaceDto {
   @IsString()
   @IsOptional()
   telephone: string;
+
+  @IsString()
+  @IsOptional()
+  naverReviewerCounts: string;
+
+  @IsString()
+  @IsOptional()
+  naverStars: string;
 }

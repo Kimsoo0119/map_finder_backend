@@ -23,7 +23,7 @@ export class PlacesRepository {
       });
     }
   }
-  async createPlace(place: PlaceDto): Promise<PlaceInformation> {
+  async createPlace(place: PlaceInformation): Promise<PlaceInformation> {
     try {
       const selectedPlace: PlaceInformation = await this.prisma.place.create({
         data: place,

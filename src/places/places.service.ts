@@ -5,6 +5,9 @@ import { PlaceInformation } from './interface/places.interface';
 import { PlacesRepository } from './repository/places.repository';
 import { parseStringPromise } from 'xml2js';
 import { title } from 'process';
+import { CrawledNaverReview } from 'src/common/interface/common-interface';
+import { Place } from '@prisma/client';
+import { ReviewsRepository } from 'src/reviews/repository/reviews.repository';
 
 const headers = {
   'X-Naver-Client-Id': process.env.CLIENT_ID,
@@ -13,7 +16,10 @@ const headers = {
 
 @Injectable()
 export class PlacesService {
-  constructor(private readonly placesRepository: PlacesRepository) {}
+  constructor(
+    private readonly placesRepository: PlacesRepository,
+    private readonly reviewsRepository: ReviewsRepository,
+  ) {}
 
   private readonly naverSearchApiUrl = process.env.NAVER_SEARCH_URL;
   private readonly crawlServerUrl = process.env.CRAWL_SERVER_URL;
@@ -26,19 +32,21 @@ export class PlacesService {
           title,
           address,
         });
+      const { naverReviewerCounts, naverStars, reviews } = await axios
+        .get<CrawledNaverReview>(`${this.crawlServerUrl}/${title}`)
+        .then((res) => res.data);
 
-      // console.log(`${this.crawlServerUrl}/a`);
+      const crawledPlace: PlaceInformation = {
+        ...place,
+        naverReviewerCounts,
+        naverStars,
+      };
 
-      // const response = await axios.get(`${this.crawlServerUrl}/${title}`);
-      // console.log(response);
+      const createdPlace: PlaceInformation =
+        await this.placesRepository.createPlace(crawledPlace);
 
-      // if (!selectedPlace) {
-      //   const selectedPlace: PlaceInformation =
-      //     await this.placesRepository.createPlace(place);
-
-      //   return selectedPlace;
-      // }
-
+      if (createdPlace.id) {
+      }
       return;
     } catch (error) {
       console.log(error);

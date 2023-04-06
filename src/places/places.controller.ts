@@ -12,11 +12,14 @@ export class PlacesController {
   ): Promise<PlaceInformation[]> {
     const places: PlaceInformation[] =
       await this.placeService.getPlacesWithNaver(placeTitle);
+
     return places;
   }
+
   @Get('/')
   async getPlaceWithCrawl(@Query() places: PlaceDto) {
     const place = await this.placeService.getPlaceWithCrawl(places);
+
     return place;
   }
 }
