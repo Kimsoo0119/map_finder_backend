@@ -1,3 +1,5 @@
+import { NaverReview } from 'src/common/interface/common-interface';
+
 export interface PlaceInformation {
   title: string;
   address: string;
@@ -14,4 +16,9 @@ export interface PlaceInformation {
 export interface PlaceSummary {
   title: string;
   address: string;
+}
+
+export interface PlaceAndReviews {
+  createdPlace: PlaceInformation;
+  reviews: NaverReview[];
 }
