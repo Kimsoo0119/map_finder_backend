@@ -1,5 +1,10 @@
+enum LocationType {
+  INSIDE
+  OUTSIDE
+}
+
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native"]
 }
 
@@ -8,42 +13,53 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  name        String
-  createdAt   DateTime @default(now())
-  review      Review[]
+model Users {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  simpleReviews    SimpleReviews[]
+  detailedReviews    DetailedReviews[]
 }
 
-model Place {
-  id          Int      @id @default(autoincrement())
-  title       String    
-  address     String  
-  category    String
-  telephone   String?
-  stars       String?
-  naverStars  String?
-  naverReviewerCounts   String?   
-  review      Review[]
-  naverReview NaverReview[]
+model Places {
+  id                  Int           @id @default(autoincrement())
+  title               String
+  address             String
+  category            String
+  telephone           String?
+  stars               String?
+  naverStars          String?
+  naverReviewerCounts String?
+  naverReview         NaverReviews[]
+  simpleReviews    SimpleReviews[]
+  detailedReviews    DetailedReviews[]
 }
 
-model NaverReview {
-  id          Int       @id @default(autoincrement())
+model NaverReviews {
+  id          Int    @id @default(autoincrement())
   placeId     Int
-  nickname    String    
-  discription String
-  place       Place     @relation(fields: [placeId], references: [id])
+  description String
+  place       Places  @relation(fields: [placeId], references: [id], onDelete: Cascade)
 }
 
-model Review {
-  id          Int       @id @default(autoincrement())
-  userId      Int     
-  placeId     Int   
-  description String
-  stars       Float?     
-  user        User      @relation(fields: [userId], references: [id])
-  place       Place     @relation(fields: [placeId], references: [id])
+model SimpleReviews {
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  placeId     Int
+  description String?
+  stars       Float
+  place       Places  @relation(fields: [placeId], references: [id])
+  user        Users   @relation(fields: [userId], references: [id])
+}
+
+model DetailedReviews {
+  id          Int @id @default(autoincrement())
+  placeId     Int
+  userId      Int
+  isUnisex    Boolean?
+  location    LocationType?
+  description String?
+  user        Users @relation(fields: [userId], references: [id])
+  place       Places  @relation(fields: [placeId], references: [id])
 }
