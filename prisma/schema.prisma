@@ -1,3 +1,8 @@
+enum LocationType {
+  INSIDE
+  OUTSIDE
+}
+
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native"]
@@ -8,15 +13,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model Users {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String
   createdAt DateTime @default(now())
-  review    Review[]
+  simpleReviews    SimpleReviews[]
+  detailedReviews    DetailedReviews[]
 }
 
-model Place {
+model Places {
   id                  Int           @id @default(autoincrement())
   title               String
   address             String
@@ -25,23 +31,35 @@ model Place {
   stars               String?
   naverStars          String?
   naverReviewerCounts String?
-  naverReview         NaverReview[]
-  review              Review[]
+  naverReview         NaverReviews[]
+  simpleReviews    SimpleReviews[]
+  detailedReviews    DetailedReviews[]
 }
 
-model NaverReview {
+model NaverReviews {
   id          Int    @id @default(autoincrement())
   placeId     Int
   description String
-  place       Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  place       Places  @relation(fields: [placeId], references: [id], onDelete: Cascade)
 }
 
-model Review {
+model SimpleReviews {
   id          Int    @id @default(autoincrement())
   userId      Int
   placeId     Int
-  description String
-  stars       Float?
-  place       Place  @relation(fields: [placeId], references: [id])
-  user        User   @relation(fields: [userId], references: [id])
+  description String?
+  stars       Float
+  place       Places  @relation(fields: [placeId], references: [id])
+  user        Users   @relation(fields: [userId], references: [id])
+}
+
+model DetailedReviews {
+  id          Int @id @default(autoincrement())
+  placeId     Int
+  userId      Int
+  isUnisex    Boolean?
+  location    LocationType?
+  description String?
+  user        Users @relation(fields: [userId], references: [id])
+  place       Places  @relation(fields: [placeId], references: [id])
 }

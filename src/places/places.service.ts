@@ -40,7 +40,7 @@ export class PlacesService {
         await this.crawlAndCreatePlace(place);
 
       if (createdPlace.id && reviews[0]) {
-        await this.createReviews(createdPlace.id, reviews);
+        await this.createNaverReviews(createdPlace.id, reviews);
       }
 
       return createdPlace;
@@ -85,7 +85,7 @@ export class PlacesService {
     place: PlaceInformation,
   ): Promise<PlaceInformation> {
     try {
-      const createdPlace: PlaceInformation = await this.prisma.place.create({
+      const createdPlace: PlaceInformation = await this.prisma.places.create({
         data: place,
       });
 
@@ -99,7 +99,7 @@ export class PlacesService {
     }
   }
 
-  private async createReviews(
+  private async createNaverReviews(
     placeId: number,
     reviews: NaverReview[],
   ): Promise<void> {
@@ -109,7 +109,7 @@ export class PlacesService {
         description: review.description,
       }));
 
-      await this.prisma.naverReview.createMany({
+      await this.prisma.naverReviews.createMany({
         data: reviewData,
       });
     } catch (error) {
@@ -125,6 +125,7 @@ export class PlacesService {
       const places: PlaceInformation[] = await this.sendNaverSearchApi(
         placeTitle,
       );
+
       return places;
     } catch (error) {
       throw new InternalServerErrorException(
@@ -140,7 +141,7 @@ export class PlacesService {
     try {
       const params = {
         query: placeTitle,
-        display: 4,
+        display: 5,
       };
 
       const { data } = await axios.get(this.naverSearchApiUrl, {
@@ -187,11 +188,10 @@ export class PlacesService {
     place: PlaceSummary,
   ): Promise<PlaceInformation> {
     try {
-      const selectedPlace: PlaceInformation = await this.prisma.place.findFirst(
-        {
+      const selectedPlace: PlaceInformation =
+        await this.prisma.places.findFirst({
           where: { ...place },
-        },
-      );
+        });
 
       return selectedPlace;
     } catch (error) {
