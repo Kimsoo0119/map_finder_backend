@@ -16,7 +16,8 @@ datasource db {
 model Users {
   id        Int      @id @default(autoincrement())
   email     String   @unique
-  name      String
+  nickname  String
+  name      String?
   createdAt DateTime @default(now())
   simpleReviews    SimpleReviews[]
   detailedReviews    DetailedReviews[]
