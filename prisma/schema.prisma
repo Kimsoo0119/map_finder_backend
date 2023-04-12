@@ -45,8 +45,8 @@ model NaverReviews {
 
 model SimpleReviews {
   id          Int    @id @default(autoincrement())
-  userId      Int
   placeId     Int
+  userId      Int
   description String?
   stars       Float
   place       Places  @relation(fields: [placeId], references: [id])
