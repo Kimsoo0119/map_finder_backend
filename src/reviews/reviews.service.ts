@@ -1,5 +1,10 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -24,4 +29,49 @@ export class ReviewsService {
       });
     }
   }
+
+  async createSimpleReview(review: CreateReviewDto): Promise<void> {
+    try {
+      const { userId, placeId } = review;
+
+      await this.checkUserExists(userId);
+      await this.checkPlaceExists(placeId);
+      await this.prisma.simpleReviews.create({ data: review });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private async checkUserExists(userId: number): Promise<void> {
+    try {
+      const user = await this.prisma.users.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`존재하지 않는 유저입니다.`);
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private async checkPlaceExists(placeId: number): Promise<void> {
+    try {
+      const place = await this.prisma.users.findUnique({
+        where: {
+          id: placeId,
+        },
+      });
+
+      if (!place) {
+        throw new NotFoundException(`존재하지 않는 가게입니다.`);
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+  private async;
 }
