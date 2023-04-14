@@ -38,6 +38,8 @@ export class ReviewsService {
       await this.checkPlaceExists(placeId);
       await this.prisma.simpleReviews.create({ data: review });
     } catch (error) {
+      console.log(error);
+
       throw error;
     }
   }
@@ -60,7 +62,7 @@ export class ReviewsService {
 
   private async checkPlaceExists(placeId: number): Promise<void> {
     try {
-      const place = await this.prisma.users.findUnique({
+      const place = await this.prisma.places.findUnique({
         where: {
           id: placeId,
         },
@@ -73,5 +75,4 @@ export class ReviewsService {
       throw error;
     }
   }
-  private async;
 }
