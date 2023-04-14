@@ -48,8 +48,10 @@ model SimpleReviews {
   id          Int    @id @default(autoincrement())
   placeId     Int
   userId      Int
-  description String?
   stars       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  description String?
   place       Places  @relation(fields: [placeId], references: [id])
   user        Users   @relation(fields: [userId], references: [id])
 }
@@ -58,6 +60,8 @@ model DetailedReviews {
   id          Int @id @default(autoincrement())
   placeId     Int
   userId      Int
+  createdAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   isUnisex    Boolean?
   location    LocationType?
   description String?
