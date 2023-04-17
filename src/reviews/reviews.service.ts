@@ -7,6 +7,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
 import { SimpleReviews } from '@prisma/client';
+import { DeleteReviewDto } from './dto/delete-reveiw-dto';
 
 @Injectable()
 export class ReviewsService {
@@ -84,7 +85,7 @@ export class ReviewsService {
     description,
   }: UpdateSimpleReviewDto): Promise<void> {
     try {
-      await this.checkSimpleReviewExistsByUserIdAndId(reviewId, userId);
+      await this.checkSimpleReviewExistsByUserIdAndId(userId, reviewId);
       await this.prisma.simpleReviews.updateMany({
         where: { id: reviewId, userId },
         data: { description, stars },
@@ -95,8 +96,8 @@ export class ReviewsService {
   }
 
   private async checkSimpleReviewExistsByUserIdAndId(
-    reviewId: number,
     userId: number,
+    reviewId: number,
   ): Promise<void> {
     try {
       const review = await this.prisma.simpleReviews.findMany({
@@ -106,6 +107,20 @@ export class ReviewsService {
       if (!review.length) {
         throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
       }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deleteSimpleReview({
+    userId,
+    reviewId,
+  }: DeleteReviewDto): Promise<void> {
+    try {
+      await this.checkSimpleReviewExistsByUserIdAndId(userId, reviewId);
+      await this.prisma.simpleReviews.deleteMany({
+        where: { id: reviewId, userId },
+      });
     } catch (error) {
       throw error;
     }
