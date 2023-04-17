@@ -1,8 +1,17 @@
-import { Body, Controller, Get, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { GetReviewsDto } from './dto/get-reviews.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
+import { DeleteReviewDto } from './dto/delete-reveiw-dto';
 
 @Controller('reviews')
 export class ReviewsController {
@@ -35,7 +44,19 @@ export class ReviewsController {
   ) {
     try {
       await this.reviewsService.updateSimpleReview(updateSimpleReviewDto);
+
       return { message: '리뷰 수정 성공' };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Delete('/simple')
+  async deleteSimpleReview(@Body() deleteSimpleReviewDto: DeleteReviewDto) {
+    try {
+      await this.reviewsService.deleteSimpleReview(deleteSimpleReviewDto);
+
+      return { message: '리뷰 삭제 성공' };
     } catch (error) {
       throw error;
     }
