@@ -1,16 +1,16 @@
 import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
-export class CreateReviewDto {
+export class UpdateSimpleReviewDto {
   @IsNumber()
   @IsNotEmpty()
-  placeId: number;
+  reviewId: number;
 
   @IsNumber()
   @IsNotEmpty()
   userId: number;
 
   @IsNumber()
-  @IsNotEmpty()
+  @IsOptional()
   stars: number;
 
   @IsOptional()

@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
+import { SimpleReviews } from '@prisma/client';
 
 @Injectable()
 export class ReviewsService {
@@ -17,6 +19,7 @@ export class ReviewsService {
         select: {
           id: true,
           description: true,
+          stars: true,
           user: { select: { name: true } },
         },
       });
@@ -30,13 +33,13 @@ export class ReviewsService {
     }
   }
 
-  async createSimpleReview(review: CreateReviewDto): Promise<void> {
+  async createSimpleReview(createReviewDto: CreateReviewDto): Promise<void> {
     try {
-      const { userId, placeId } = review;
+      const { userId, placeId } = createReviewDto;
 
       await this.checkUserExists(userId);
       await this.checkPlaceExists(placeId);
-      await this.prisma.simpleReviews.create({ data: review });
+      await this.prisma.simpleReviews.create({ data: createReviewDto });
     } catch (error) {
       throw error;
     }
@@ -60,7 +63,7 @@ export class ReviewsService {
 
   private async checkPlaceExists(placeId: number): Promise<void> {
     try {
-      const place = await this.prisma.users.findUnique({
+      const place = await this.prisma.places.findUnique({
         where: {
           id: placeId,
         },
@@ -73,5 +76,38 @@ export class ReviewsService {
       throw error;
     }
   }
-  private async;
+
+  async updateSimpleReview({
+    reviewId,
+    userId,
+    stars,
+    description,
+  }: UpdateSimpleReviewDto): Promise<void> {
+    try {
+      await this.checkSimpleReviewExistsByUserIdAndId(reviewId, userId);
+      await this.prisma.simpleReviews.updateMany({
+        where: { id: reviewId, userId },
+        data: { description, stars },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private async checkSimpleReviewExistsByUserIdAndId(
+    reviewId: number,
+    userId: number,
+  ): Promise<void> {
+    try {
+      const review = await this.prisma.simpleReviews.findMany({
+        where: { id: reviewId, userId },
+        select: { userId: true },
+      });
+      if (!review.length) {
+        throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
 }
