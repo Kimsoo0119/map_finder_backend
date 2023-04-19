@@ -6,7 +6,6 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
-import { SimpleReviews } from '@prisma/client';
 import { DeleteReviewDto } from './dto/delete-reveiw-dto';
 
 @Injectable()
