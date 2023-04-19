@@ -72,4 +72,14 @@ export class ReviewsController {
 
     return detailedReviews;
   }
+
+  @Get('/detail/:userId')
+  async getDetailedReviewsByUserId(
+    @Param('userId', ParseIntPipe) userId: number,
+  ): Promise<DetailedReview[]> {
+    const detailedReviews: DetailedReview[] =
+      await this.reviewsService.getDetailedReviewsByUserId(userId);
+
+    return detailedReviews;
+  }
 }

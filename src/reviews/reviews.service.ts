@@ -129,4 +129,21 @@ export class ReviewsService {
 
     return simpleReviews;
   }
+  async getDetailedReviewsByUserId(userId: number): Promise<DetailedReview[]> {
+    const detailedReviews: DetailedReview[] =
+      await this.prisma.detailedReviews.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          createdAt: true,
+          updatedAt: true,
+          isUnisex: true,
+          location: true,
+          description: true,
+          user: { select: { name: true } },
+        },
+      });
+
+    return detailedReviews;
+  }
 }
