@@ -18,47 +18,31 @@ export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
   @Get('/simple')
   async getSimpleReviews(@Query() { placeId }: GetReviewsDto) {
-    try {
-      const reviews = await this.reviewsService.getSimpleReviews(placeId);
+    const reviews = await this.reviewsService.getSimpleReviews(placeId);
 
-      return reviews;
-    } catch (error) {
-      throw error;
-    }
+    return reviews;
   }
 
   @Post('/simple')
   async createSimpleReview(@Body() createReviewDto: CreateReviewDto) {
-    try {
-      await this.reviewsService.createSimpleReview(createReviewDto);
+    await this.reviewsService.createSimpleReview(createReviewDto);
 
-      return { message: '리뷰 작성 성공' };
-    } catch (error) {
-      throw error;
-    }
+    return { message: '리뷰 작성 성공' };
   }
 
   @Patch('/simple')
   async updateSimpleReview(
     @Body() updateSimpleReviewDto: UpdateSimpleReviewDto,
   ) {
-    try {
-      await this.reviewsService.updateSimpleReview(updateSimpleReviewDto);
+    await this.reviewsService.updateSimpleReview(updateSimpleReviewDto);
 
-      return { message: '리뷰 수정 성공' };
-    } catch (error) {
-      throw error;
-    }
+    return { message: '리뷰 수정 성공' };
   }
 
   @Delete('/simple')
   async deleteSimpleReview(@Body() deleteSimpleReviewDto: DeleteReviewDto) {
-    try {
-      await this.reviewsService.deleteSimpleReview(deleteSimpleReviewDto);
+    await this.reviewsService.deleteSimpleReview(deleteSimpleReviewDto);
 
-      return { message: '리뷰 삭제 성공' };
-    } catch (error) {
-      throw error;
-    }
+    return { message: '리뷰 삭제 성공' };
   }
 }
