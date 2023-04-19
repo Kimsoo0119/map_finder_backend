@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -26,6 +28,16 @@ export class ReviewsController {
     );
 
     return reviews;
+  }
+
+  @Get('/simple/:userId')
+  async getSimpleReviewsByUserId(
+    @Param('userId', ParseIntPipe) userId: number,
+  ): Promise<SimpleReview[]> {
+    const simpleReviews: SimpleReview[] =
+      await this.reviewsService.getSimpleReviewsByUserId(userId);
+
+    return simpleReviews;
   }
 
   @Post('/simple')
