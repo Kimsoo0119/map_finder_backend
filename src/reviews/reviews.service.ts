@@ -13,67 +13,48 @@ export class ReviewsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSimpleReviews(placeId: number) {
-    try {
-      const reviews = await this.prisma.simpleReviews.findMany({
-        where: { placeId },
-        select: {
-          id: true,
-          description: true,
-          stars: true,
-          user: { select: { name: true } },
-        },
-      });
-      return reviews;
-    } catch (error) {
-      throw new InternalServerErrorException({
-        location: 'getSimpleReviews',
-        error,
-        message: '알 수 없는 서버 에러입니다.',
-      });
-    }
+    const reviews = await this.prisma.simpleReviews.findMany({
+      where: { placeId },
+      select: {
+        id: true,
+        description: true,
+        stars: true,
+        user: { select: { name: true } },
+      },
+    });
+
+    return reviews;
   }
 
   async createSimpleReview(createReviewDto: CreateReviewDto): Promise<void> {
-    try {
-      const { userId, placeId } = createReviewDto;
+    const { userId, placeId } = createReviewDto;
 
-      await this.checkUserExists(userId);
-      await this.checkPlaceExists(placeId);
-      await this.prisma.simpleReviews.create({ data: createReviewDto });
-    } catch (error) {
-      throw error;
-    }
+    await this.checkUserExists(userId);
+    await this.checkPlaceExists(placeId);
+    await this.prisma.simpleReviews.create({ data: createReviewDto });
   }
 
   private async checkUserExists(userId: number): Promise<void> {
-    try {
-      const user = await this.prisma.users.findUnique({
-        where: {
-          id: userId,
-        },
-      });
+    const user = await this.prisma.users.findUnique({
+      where: {
+        id: userId,
+      },
+    });
 
-      if (!user) {
-        throw new NotFoundException(`존재하지 않는 유저입니다.`);
-      }
-    } catch (error) {
-      throw error;
+    if (!user) {
+      throw new NotFoundException(`존재하지 않는 유저입니다.`);
     }
   }
 
   private async checkPlaceExists(placeId: number): Promise<void> {
-    try {
-      const place = await this.prisma.places.findUnique({
-        where: {
-          id: placeId,
-        },
-      });
+    const place = await this.prisma.places.findUnique({
+      where: {
+        id: placeId,
+      },
+    });
 
-      if (!place) {
-        throw new NotFoundException(`존재하지 않는 가게입니다.`);
-      }
-    } catch (error) {
-      throw error;
+    if (!place) {
+      throw new NotFoundException(`존재하지 않는 가게입니다.`);
     }
   }
 
@@ -83,31 +64,23 @@ export class ReviewsService {
     stars,
     description,
   }: UpdateSimpleReviewDto): Promise<void> {
-    try {
-      await this.checkSimpleReviewExistsByUserIdAndId(userId, reviewId);
-      await this.prisma.simpleReviews.updateMany({
-        where: { id: reviewId, userId },
-        data: { description, stars },
-      });
-    } catch (error) {
-      throw error;
-    }
+    await this.checkSimpleReviewExistsByUserIdAndId(userId, reviewId);
+    await this.prisma.simpleReviews.updateMany({
+      where: { id: reviewId, userId },
+      data: { description, stars },
+    });
   }
 
   private async checkSimpleReviewExistsByUserIdAndId(
     userId: number,
     reviewId: number,
   ): Promise<void> {
-    try {
-      const review = await this.prisma.simpleReviews.findMany({
-        where: { id: reviewId, userId },
-        select: { userId: true },
-      });
-      if (!review.length) {
-        throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
-      }
-    } catch (error) {
-      throw error;
+    const review = await this.prisma.simpleReviews.findMany({
+      where: { id: reviewId, userId },
+      select: { userId: true },
+    });
+    if (!review.length) {
+      throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
     }
   }
 
@@ -115,13 +88,9 @@ export class ReviewsService {
     userId,
     reviewId,
   }: DeleteReviewDto): Promise<void> {
-    try {
-      await this.checkSimpleReviewExistsByUserIdAndId(userId, reviewId);
-      await this.prisma.simpleReviews.deleteMany({
-        where: { id: reviewId, userId },
-      });
-    } catch (error) {
-      throw error;
-    }
+    await this.checkSimpleReviewExistsByUserIdAndId(userId, reviewId);
+    await this.prisma.simpleReviews.deleteMany({
+      where: { id: reviewId, userId },
+    });
   }
 }
