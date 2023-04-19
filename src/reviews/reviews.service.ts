@@ -7,13 +7,15 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
 import { DeleteReviewDto } from './dto/delete-reveiw-dto';
+import { DetailedReview, SimpleReview } from './interface/reviews.interface';
+import { Places, Users } from '@prisma/client';
 
 @Injectable()
 export class ReviewsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getSimpleReviews(placeId: number) {
-    const reviews = await this.prisma.simpleReviews.findMany({
+  async getSimpleReviews(placeId: number): Promise<SimpleReview[]> {
+    const reviews: SimpleReview[] = await this.prisma.simpleReviews.findMany({
       where: { placeId },
       select: {
         id: true,
@@ -35,7 +37,7 @@ export class ReviewsService {
   }
 
   private async checkUserExists(userId: number): Promise<void> {
-    const user = await this.prisma.users.findUnique({
+    const user: Users = await this.prisma.users.findUnique({
       where: {
         id: userId,
       },
@@ -47,7 +49,7 @@ export class ReviewsService {
   }
 
   private async checkPlaceExists(placeId: number): Promise<void> {
-    const place = await this.prisma.places.findUnique({
+    const place: Places = await this.prisma.places.findUnique({
       where: {
         id: placeId,
       },
@@ -92,5 +94,22 @@ export class ReviewsService {
     await this.prisma.simpleReviews.deleteMany({
       where: { id: reviewId, userId },
     });
+  }
+
+  async getDetailedReviews(placeId: number): Promise<DetailedReview[]> {
+    const reviews: DetailedReview[] =
+      await this.prisma.detailedReviews.findMany({
+        where: { placeId },
+        select: {
+          id: true,
+          createdAt: true,
+          updatedAt: true,
+          isUnisex: true,
+          location: true,
+          description: true,
+          user: { select: { name: true } },
+        },
+      });
+    return reviews;
   }
 }

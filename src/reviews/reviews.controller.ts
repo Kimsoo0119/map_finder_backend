@@ -12,13 +12,18 @@ import { GetReviewsDto } from './dto/get-reviews.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
 import { DeleteReviewDto } from './dto/delete-reveiw-dto';
+import { DetailedReview, SimpleReview } from './interface/reviews.interface';
 
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
   @Get('/simple')
-  async getSimpleReviews(@Query() { placeId }: GetReviewsDto) {
-    const reviews = await this.reviewsService.getSimpleReviews(placeId);
+  async getSimpleReviews(
+    @Query() { placeId }: GetReviewsDto,
+  ): Promise<SimpleReview[]> {
+    const reviews: SimpleReview[] = await this.reviewsService.getSimpleReviews(
+      placeId,
+    );
 
     return reviews;
   }
@@ -44,5 +49,15 @@ export class ReviewsController {
     await this.reviewsService.deleteSimpleReview(deleteSimpleReviewDto);
 
     return { message: '리뷰 삭제 성공' };
+  }
+
+  @Get('/detail')
+  async getDetailedReviews(
+    @Query() { placeId }: GetReviewsDto,
+  ): Promise<DetailedReview[]> {
+    const detailedReviews: DetailedReview[] =
+      await this.reviewsService.getDetailedReviews(placeId);
+
+    return detailedReviews;
   }
 }
