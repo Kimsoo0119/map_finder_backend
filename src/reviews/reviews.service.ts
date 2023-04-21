@@ -9,6 +9,7 @@ import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
 import { DeleteReviewDto } from './dto/delete-reveiw-dto';
 import { DetailedReview, SimpleReview } from './interface/reviews.interface';
 import { Places, Users } from '@prisma/client';
+import { CreateDetailedReviewDto } from './dto/create-detailed-review.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -49,7 +50,7 @@ export class ReviewsService {
     }
   }
 
-  private async checkPlaceExists(placeId: number): Promise<void> {
+  private async checkPlaceExists(placeId: number): Promise<Places> {
     const selectedPlace: Places = await this.prisma.places.findUnique({
       where: {
         id: placeId,
@@ -59,6 +60,7 @@ export class ReviewsService {
     if (!selectedPlace) {
       throw new NotFoundException(`존재하지 않는 가게입니다.`);
     }
+    return selectedPlace;
   }
 
   async updateSimpleReview({
@@ -145,5 +147,15 @@ export class ReviewsService {
       });
 
     return detailedReviews;
+  }
+
+  async createDetailedReview(
+    createDetailedReviewDto: CreateDetailedReviewDto,
+  ): Promise<void> {
+    const { userId, placeId } = createDetailedReviewDto;
+    await this.checkUserExists(userId);
+    await this.checkPlaceExists(placeId);
+
+    await this.prisma.detailedReviews.create({ data: createDetailedReviewDto });
   }
 }

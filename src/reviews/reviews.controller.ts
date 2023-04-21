@@ -15,6 +15,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
 import { DeleteReviewDto } from './dto/delete-reveiw-dto';
 import { DetailedReview, SimpleReview } from './interface/reviews.interface';
+import { CreateDetailedReviewDto } from './dto/create-detailed-review.dto';
 
 @Controller('reviews')
 export class ReviewsController {
@@ -81,5 +82,14 @@ export class ReviewsController {
       await this.reviewsService.getDetailedReviewsByUserId(userId);
 
     return detailedReviews;
+  }
+
+  @Post('/detail')
+  async createDetailedReview(
+    @Body() createDetailedReviewDto: CreateDetailedReviewDto,
+  ) {
+    await this.reviewsService.createDetailedReview(createDetailedReviewDto);
+
+    return { message: '리뷰 작성 완료' };
   }
 }
