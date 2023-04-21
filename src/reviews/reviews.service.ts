@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -8,8 +9,9 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
 import { DeleteReviewDto } from './dto/delete-reveiw-dto';
 import { DetailedReview, SimpleReview } from './interface/reviews.interface';
-import { Places, Users } from '@prisma/client';
+import { DetailedReviews, Places, Users } from '@prisma/client';
 import { CreateDetailedReviewDto } from './dto/create-detailed-review.dto';
+import { UpdateDetailedReviewDto } from './dto/update-detailed-review.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -69,9 +71,10 @@ export class ReviewsService {
     stars,
     description,
   }: UpdateSimpleReviewDto): Promise<void> {
+    await this.checkUserExists(userId);
     await this.checkSimpleReviewExistsByUserIdAndId(userId, reviewId);
-    await this.prisma.simpleReviews.updateMany({
-      where: { id: reviewId, userId },
+    await this.prisma.simpleReviews.update({
+      where: { id: reviewId },
       data: { description, stars },
     });
   }
@@ -80,11 +83,11 @@ export class ReviewsService {
     userId: number,
     reviewId: number,
   ): Promise<void> {
-    const review = await this.prisma.simpleReviews.findMany({
+    const review = await this.prisma.simpleReviews.findFirst({
       where: { id: reviewId, userId },
       select: { userId: true },
     });
-    if (!review.length) {
+    if (!review) {
       throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
     }
   }
@@ -157,5 +160,37 @@ export class ReviewsService {
     await this.checkPlaceExists(placeId);
 
     await this.prisma.detailedReviews.create({ data: createDetailedReviewDto });
+  }
+
+  async updateDetailedReview(
+    updateDetailedReviewDto: UpdateDetailedReviewDto,
+  ): Promise<void> {
+    const { userId, placeId, reviewId, description, isUnisex, location } =
+      updateDetailedReviewDto;
+    await this.checkUserExists(userId);
+    await this.checkDetailedReviewAuthorship({ reviewId, placeId, userId });
+
+    await this.prisma.detailedReviews.update({
+      where: { id: reviewId },
+      data: { description, isUnisex, location },
+    });
+  }
+
+  private async checkDetailedReviewAuthorship({
+    reviewId,
+    placeId,
+    userId,
+  }): Promise<void> {
+    const detailedReview: DetailedReviews =
+      await this.prisma.detailedReviews.findFirst({
+        where: { id: reviewId, placeId },
+      });
+
+    if (!detailedReview) {
+      throw new NotFoundException(`해당 리뷰가 존재하지 않습니다.`);
+    }
+    if (detailedReview.userId !== userId) {
+      throw new BadRequestException(`작성자만 수정할 수 있습니다.`);
+    }
   }
 }
