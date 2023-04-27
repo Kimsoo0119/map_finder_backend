@@ -102,4 +102,11 @@ export class ReviewsController {
 
     return { message: '리뷰 수정 완료' };
   }
+
+  @Delete('/detail')
+  async deleteDetailedReview(@Body() deleteDetailedReviewDto: DeleteReviewDto) {
+    await this.reviewsService.deleteDetailedReview(deleteDetailedReviewDto);
+
+    return { message: '리뷰 삭제 완료' };
+  }
 }

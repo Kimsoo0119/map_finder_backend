@@ -168,7 +168,15 @@ export class ReviewsService {
     const { userId, placeId, reviewId, description, isUnisex, location } =
       updateDetailedReviewDto;
     await this.checkUserExists(userId);
-    await this.checkDetailedReviewAuthorship({ reviewId, placeId, userId });
+
+    const isAuthorship: boolean = await this.checkDetailedReviewAuthorship({
+      reviewId,
+      placeId,
+      userId,
+    });
+    if (!isAuthorship) {
+      throw new BadRequestException(`리뷰 작성자만 수정 가능합니다.`);
+    }
 
     await this.prisma.detailedReviews.update({
       where: { id: reviewId },
@@ -180,7 +188,7 @@ export class ReviewsService {
     reviewId,
     placeId,
     userId,
-  }): Promise<void> {
+  }): Promise<boolean> {
     const detailedReview: DetailedReviews =
       await this.prisma.detailedReviews.findFirst({
         where: { id: reviewId, placeId },
@@ -189,8 +197,26 @@ export class ReviewsService {
     if (!detailedReview) {
       throw new NotFoundException(`해당 리뷰가 존재하지 않습니다.`);
     }
-    if (detailedReview.userId !== userId) {
-      throw new BadRequestException(`작성자만 수정할 수 있습니다.`);
+
+    return detailedReview.userId === userId ? true : false;
+  }
+
+  async deleteDetailedReview({
+    userId,
+    reviewId,
+    placeId,
+  }: DeleteReviewDto): Promise<void> {
+    await this.checkUserExists(userId);
+
+    const isAuthorship: boolean = await this.checkDetailedReviewAuthorship({
+      userId,
+      reviewId,
+      placeId,
+    });
+    if (!isAuthorship) {
+      throw new BadRequestException(`리뷰 작성자만 삭제 가능합니다.`);
     }
+
+    await this.prisma.detailedReviews.delete({ where: { id: reviewId } });
   }
 }
