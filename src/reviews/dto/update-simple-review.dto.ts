@@ -10,6 +10,10 @@ export class UpdateSimpleReviewDto {
   userId: number;
 
   @IsNumber()
+  @IsNotEmpty()
+  placeId: number;
+
+  @IsNumber()
   @IsOptional()
   stars: number;
 

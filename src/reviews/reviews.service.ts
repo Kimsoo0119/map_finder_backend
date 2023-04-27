@@ -46,7 +46,6 @@ export class ReviewsService {
         id: userId,
       },
     });
-
     if (!selectedUser) {
       throw new NotFoundException(`존재하지 않는 유저입니다.`);
     }
@@ -58,10 +57,10 @@ export class ReviewsService {
         id: placeId,
       },
     });
-
     if (!selectedPlace) {
       throw new NotFoundException(`존재하지 않는 가게입니다.`);
     }
+
     return selectedPlace;
   }
 
@@ -70,26 +69,23 @@ export class ReviewsService {
     userId,
     stars,
     description,
+    placeId,
   }: UpdateSimpleReviewDto): Promise<void> {
     await this.checkUserExists(userId);
-    await this.checkSimpleReviewExistsByUserIdAndId(userId, reviewId);
+
+    const isAuthorship: boolean = await this.checkSimpleReviewAuthorship({
+      userId,
+      reviewId,
+      placeId,
+    });
+    if (!isAuthorship) {
+      throw new BadRequestException(`리뷰 작성자만 수정 가능합니다`);
+    }
+
     await this.prisma.simpleReviews.update({
       where: { id: reviewId },
       data: { description, stars },
     });
-  }
-
-  private async checkSimpleReviewExistsByUserIdAndId(
-    userId: number,
-    reviewId: number,
-  ): Promise<void> {
-    const review = await this.prisma.simpleReviews.findFirst({
-      where: { id: reviewId, userId },
-      select: { userId: true },
-    });
-    if (!review) {
-      throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
-    }
   }
 
   async deleteSimpleReview({
