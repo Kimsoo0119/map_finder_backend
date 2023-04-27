@@ -9,7 +9,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
 import { DeleteReviewDto } from './dto/delete-reveiw-dto';
 import { DetailedReview, SimpleReview } from './interface/reviews.interface';
-import { DetailedReviews, Places, Users } from '@prisma/client';
+import { DetailedReviews, Places, SimpleReviews, Users } from '@prisma/client';
 import { CreateDetailedReviewDto } from './dto/create-detailed-review.dto';
 import { UpdateDetailedReviewDto } from './dto/update-detailed-review.dto';
 
@@ -95,8 +95,19 @@ export class ReviewsService {
   async deleteSimpleReview({
     userId,
     reviewId,
+    placeId,
   }: DeleteReviewDto): Promise<void> {
-    await this.checkSimpleReviewExistsByUserIdAndId(userId, reviewId);
+    await this.checkUserExists(userId);
+
+    const isAuthorship: boolean = await this.checkSimpleReviewAuthorship({
+      userId,
+      reviewId,
+      placeId,
+    });
+    if (!isAuthorship) {
+      throw new BadRequestException(`리뷰 작성자만 삭제할 수 있습니다.`);
+    }
+
     await this.prisma.simpleReviews.deleteMany({
       where: { id: reviewId, userId },
     });
@@ -134,6 +145,7 @@ export class ReviewsService {
 
     return simpleReviews;
   }
+
   async getDetailedReviewsByUserId(userId: number): Promise<DetailedReview[]> {
     const detailedReviews: DetailedReview[] =
       await this.prisma.detailedReviews.findMany({
@@ -156,9 +168,9 @@ export class ReviewsService {
     createDetailedReviewDto: CreateDetailedReviewDto,
   ): Promise<void> {
     const { userId, placeId } = createDetailedReviewDto;
+
     await this.checkUserExists(userId);
     await this.checkPlaceExists(placeId);
-
     await this.prisma.detailedReviews.create({ data: createDetailedReviewDto });
   }
 
@@ -167,6 +179,7 @@ export class ReviewsService {
   ): Promise<void> {
     const { userId, placeId, reviewId, description, isUnisex, location } =
       updateDetailedReviewDto;
+
     await this.checkUserExists(userId);
 
     const isAuthorship: boolean = await this.checkDetailedReviewAuthorship({
@@ -199,6 +212,23 @@ export class ReviewsService {
     }
 
     return detailedReview.userId === userId ? true : false;
+  }
+
+  private async checkSimpleReviewAuthorship({
+    reviewId,
+    placeId,
+    userId,
+  }): Promise<boolean> {
+    const simpleReview: SimpleReviews =
+      await this.prisma.simpleReviews.findFirst({
+        where: { id: reviewId, placeId },
+      });
+
+    if (!simpleReview) {
+      throw new NotFoundException(`해당 리뷰가 존재하지 않습니다.`);
+    }
+
+    return simpleReview.userId === userId ? true : false;
   }
 
   async deleteDetailedReview({
