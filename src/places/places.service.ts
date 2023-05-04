@@ -81,10 +81,12 @@ export class PlacesService {
     placeId: number,
     reviews: NaverReview[],
   ): Promise<void> {
-    const reviewData = reviews.map((review) => ({
-      placeId,
-      description: review.description,
-    }));
+    const reviewData = reviews
+      .filter((reviews) => reviews.description)
+      .map((review) => ({
+        placeId,
+        description: review.description,
+      }));
 
     await this.prisma.naverReviews.createMany({
       data: reviewData,
