@@ -1,4 +1,4 @@
 export enum ToiletLocation {
-  INSIDE = 'inside',
-  OUTSIDE = 'outside',
+  INSIDE = 'INSIDE',
+  OUTSIDE = 'OUTSIDE',
 }

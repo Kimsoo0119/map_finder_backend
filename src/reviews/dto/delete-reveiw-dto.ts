@@ -8,4 +8,8 @@ export class DeleteReviewDto {
   @IsNumber()
   @IsNotEmpty()
   userId: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  placeId: number;
 }
