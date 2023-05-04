@@ -82,7 +82,7 @@ export class PlacesService {
     reviews: NaverReview[],
   ): Promise<void> {
     const reviewData = reviews
-      .filter((reviews) => reviews.description)
+      .filter((review) => review.description)
       .map((review) => ({
         placeId,
         description: review.description,
