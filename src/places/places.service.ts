@@ -78,6 +78,7 @@ export class PlacesService {
       });
 
       const $ = load(data);
+
       const naverStars = $(
         '#app-root > div > div > div > div.place_section.OP4V8 > div.zD5Nm > div.dAsGb > span.PXMot.LXIwF > em',
       ).text();
@@ -86,7 +87,7 @@ export class PlacesService {
       ).text();
 
       $('.zPfVt').each(function () {
-        naverReviews.push({ description: $(this).html() });
+        naverReviews.push({ description: $(this).text() });
       });
 
       return { naverStars, naverReviewerCounts, naverReviews };

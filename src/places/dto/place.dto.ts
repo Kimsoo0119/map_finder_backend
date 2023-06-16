@@ -6,7 +6,7 @@ export class PlaceDto {
   address: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   category: string;
 
   @IsString()
