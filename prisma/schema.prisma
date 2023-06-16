@@ -14,17 +14,17 @@ datasource db {
 }
 
 model Users {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  nickname  String
-  name      String?
-  createdAt DateTime @default(now())
-  simpleReviews    SimpleReviews[]
-  detailedReviews    DetailedReviews[]
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  nickname        String
+  name            String?
+  createdAt       DateTime          @default(now())
+  simpleReviews   SimpleReviews[]
+  detailedReviews DetailedReviews[]
 }
 
 model Places {
-  id                  Int           @id @default(autoincrement())
+  id                  Int               @id @default(autoincrement())
   title               String
   address             String
   category            String
@@ -35,38 +35,38 @@ model Places {
   naverStars          String?
   naverReviewerCounts String?
   naverReview         NaverReviews[]
-  simpleReviews    SimpleReviews[]
-  detailedReviews    DetailedReviews[]
+  simpleReviews       SimpleReviews[]
+  detailedReviews     DetailedReviews[]
 }
 
 model NaverReviews {
   id          Int    @id @default(autoincrement())
   placeId     Int
   description String
-  place       Places  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  place       Places @relation(fields: [placeId], references: [id], onDelete: Cascade)
 }
 
 model SimpleReviews {
-  id          Int    @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   placeId     Int
   userId      Int
   stars       Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   description String?
-  place       Places  @relation(fields: [placeId], references: [id])
-  user        Users   @relation(fields: [userId], references: [id])
+  place       Places   @relation(fields: [placeId], references: [id])
+  user        Users    @relation(fields: [userId], references: [id])
 }
 
 model DetailedReviews {
-  id          Int @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   placeId     Int
   userId      Int
-  createdAt DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   isUnisex    Boolean?
   location    LocationType?
   description String?
-  user        Users @relation(fields: [userId], references: [id])
-  place       Places  @relation(fields: [placeId], references: [id])
+  user        Users         @relation(fields: [userId], references: [id])
+  place       Places        @relation(fields: [placeId], references: [id])
 }
