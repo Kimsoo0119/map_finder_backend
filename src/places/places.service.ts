@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import axios from 'axios';
 import { PlaceDto } from './dto/place.dto';
 import {
@@ -8,12 +12,13 @@ import {
 } from './interface/places.interface';
 import { parseStringPromise } from 'xml2js';
 import {
-  CrawledNaverReview,
+  CrawledNaverPlaceInformations,
   NaverReview,
 } from 'src/common/interface/common-interface';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { load } from 'cheerio';
 
-const headers = {
+const apiHeaders = {
   'X-Naver-Client-Id': process.env.CLIENT_ID,
   'X-Naver-Client-Secret': process.env.CLIENT_SECRET,
 };
@@ -21,9 +26,15 @@ const headers = {
 @Injectable()
 export class PlacesService {
   constructor(private readonly prisma: PrismaService) {}
-
-  private readonly naverSearchApiUrl = process.env.NAVER_SEARCH_URL;
-  private readonly crawlServerUrl = process.env.CRAWL_SERVER_URL;
+  private readonly naverLocalSearchApiUrl = process.env.NAVER_LOCAL_SEARCH_URL;
+  private readonly naverMapUrl = process.env.NAVER_MAP_URL;
+  private readonly naverMapUrlOption = process.env.NAVER_MAP_URL_OPTION;
+  private readonly naverPlaceUrl = process.env.NAVER_PLACE_URL;
+  private readonly naverPlaceBaseUrl = process.env.NAVER_PLACE_BASE_URL;
+  private readonly naverHeaders = {
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36',
+  };
 
   async getPlaceWithCrawl(place: PlaceDto) {
     const { title, address } = place;
@@ -35,53 +46,89 @@ export class PlacesService {
       return selectedPlace;
     }
 
-    const { createdPlace, reviews }: PlaceAndReviews =
-      await this.crawlAndCreatePlace(place);
+    const { naverPlaceId, thumUrl }: CrawledNaverPlaceInformations =
+      await this.crawlPlaceDetails(title);
 
-    if (createdPlace.id && reviews[0]) {
-      await this.createNaverReviews(createdPlace.id, reviews);
+    const { naverStars, naverReviewerCounts, naverReviews } =
+      await this.crawlNaverReviewsAndStars(naverPlaceId);
+    if (naverReviews) {
+      const crawledPlace: PlaceInformation = {
+        ...place,
+        naverStars,
+        naverReviewerCounts,
+        naverPlaceId,
+        thumUrl,
+      };
+
+      const createdPlaceId: number = await this.createPlace(crawledPlace);
+
+      await this.createNaverReviews(createdPlaceId, naverReviews);
+      return crawledPlace;
     }
-
-    return createdPlace;
   }
 
-  private async crawlAndCreatePlace(place: PlaceDto): Promise<PlaceAndReviews> {
-    const { title } = place;
-    const { data } = await axios.get<CrawledNaverReview>(
-      `${this.crawlServerUrl}/${title}`,
+  private async crawlNaverReviewsAndStars(naverPlaceId: string) {
+    const naverPlaceReviewUrl = await this.getNaverPlaceReviewUrl(naverPlaceId);
+
+    const naverReviews = [];
+
+    try {
+      const { data } = await axios.get(naverPlaceReviewUrl, {
+        headers: this.naverHeaders,
+      });
+
+      const $ = load(data);
+      const naverStars = $(
+        '#app-root > div > div > div > div.place_section.OP4V8 > div.zD5Nm > div.dAsGb > span.PXMot.LXIwF > em',
+      ).text();
+      const naverReviewerCounts = $(
+        '#app-root > div > div > div > div.place_section.OP4V8 > div.zD5Nm > div.dAsGb > span:nth-child(2) > a > em',
+      ).text();
+
+      $('.zPfVt').each(function () {
+        naverReviews.push({ description: $(this).html() });
+      });
+
+      return { naverStars, naverReviewerCounts, naverReviews };
+    } catch (error) {
+      if (error.response.status === 404) {
+        return;
+      }
+    }
+  }
+
+  private async getNaverPlaceReviewUrl(placeId: string): Promise<string> {
+    const extractedPlaceId = placeId.match(/\d+/g).join('');
+    const naverPlaceUrl = `${this.naverPlaceBaseUrl}${extractedPlaceId}`;
+
+    const { request } = await axios.get(naverPlaceUrl, {
+      headers: apiHeaders,
+    });
+
+    const naverPlaceReviewUrl = request.res.responseUrl.replace(
+      '/home',
+      '/review/visitor',
     );
-    const {
-      naverReviewerCounts = undefined,
-      naverStars = undefined,
-      reviews = [],
-    } = data;
 
-    const crawledPlace: PlaceInformation = {
-      ...place,
-      naverReviewerCounts,
-      naverStars,
-    };
-
-    const createdPlace = await this.createPlace(crawledPlace);
-
-    return { createdPlace, reviews };
+    return naverPlaceReviewUrl;
   }
 
-  private async createPlace(
-    place: PlaceInformation,
-  ): Promise<PlaceInformation> {
+  private async createPlace(place: PlaceInformation): Promise<number> {
     const createdPlace: PlaceInformation = await this.prisma.places.create({
       data: place,
     });
+    if (!createdPlace.id) {
+      throw new InternalServerErrorException(`데이터 생성에 실패했습니다.`);
+    }
 
-    return createdPlace;
+    return createdPlace.id;
   }
 
   private async createNaverReviews(
     placeId: number,
-    reviews: NaverReview[],
+    naverReviews: NaverReview[],
   ): Promise<void> {
-    const reviewData = reviews
+    const reviewData = naverReviews
       .filter((review) => review.description)
       .map((review) => ({
         placeId,
@@ -109,8 +156,8 @@ export class PlacesService {
       display: 5,
     };
 
-    const { data } = await axios.get(this.naverSearchApiUrl, {
-      headers,
+    const { data } = await axios.get(this.naverLocalSearchApiUrl, {
+      headers: apiHeaders,
       params,
     });
 
@@ -151,5 +198,23 @@ export class PlacesService {
     });
 
     return selectedPlace;
+  }
+
+  private async crawlPlaceDetails(
+    title,
+  ): Promise<CrawledNaverPlaceInformations> {
+    const naverPlaceUrl = `${this.naverMapUrl}?query=${title}${this.naverMapUrlOption}`;
+
+    const { data } = await axios.get(naverPlaceUrl, {
+      headers: this.naverHeaders,
+    });
+
+    if (data.result.type === 'NO_RESULT') {
+      throw new NotFoundException(`검색 결과가 존재하지 않습니다.`);
+    }
+
+    const { id: naverPlaceId, thumUrl } = data.result.site.list[0];
+
+    return { naverPlaceId, thumUrl };
   }
 }

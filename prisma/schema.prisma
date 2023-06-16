@@ -28,8 +28,10 @@ model Places {
   title               String
   address             String
   category            String
+  thumUrl             String?
   telephone           String?
   stars               String?
+  naverPlaceId        String?
   naverStars          String?
   naverReviewerCounts String?
   naverReview         NaverReviews[]

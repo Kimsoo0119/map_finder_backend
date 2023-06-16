@@ -11,6 +11,8 @@ export interface PlaceInformation {
   mapY?: number;
   naverReviewerCounts?: string;
   naverStars?: string;
+  thumUrl?: string;
+  naverPlaceId?: string;
 }
 
 export interface PlaceSummary {
