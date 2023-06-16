@@ -27,7 +27,7 @@ model Places {
   id                  Int               @id @default(autoincrement())
   title               String
   address             String
-  category            String
+  category            String?
   thumUrl             String?
   telephone           String?
   stars               String?
