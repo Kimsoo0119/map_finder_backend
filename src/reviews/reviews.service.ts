@@ -25,7 +25,7 @@ export class ReviewsService {
           id: true,
           description: true,
           stars: true,
-          user: { select: { name: true } },
+          user: { select: { nickname: true } },
         },
       });
 
@@ -120,7 +120,7 @@ export class ReviewsService {
           isUnisex: true,
           location: true,
           description: true,
-          user: { select: { name: true } },
+          user: { select: { nickname: true } },
         },
       });
 
@@ -135,7 +135,7 @@ export class ReviewsService {
           id: true,
           description: true,
           stars: true,
-          user: { select: { name: true } },
+          user: { select: { nickname: true } },
         },
       });
 
@@ -153,7 +153,7 @@ export class ReviewsService {
           isUnisex: true,
           location: true,
           description: true,
-          user: { select: { name: true } },
+          user: { select: { nickname: true } },
         },
       });
 

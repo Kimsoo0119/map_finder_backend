@@ -4,7 +4,7 @@ export interface DetailedReview {
   id: number;
   description: string;
   user: {
-    name: string;
+    nickname: string;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -17,6 +17,6 @@ export interface SimpleReview {
   description: string;
   stars: number;
   user: {
-    name: string;
+    nickname: string;
   };
 }
