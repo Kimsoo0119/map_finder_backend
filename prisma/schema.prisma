@@ -17,10 +17,10 @@ model Users {
   id              Int               @id @default(autoincrement())
   email           String            @unique
   nickname        String
-  name            String?
   createdAt       DateTime          @default(now())
   simpleReviews   SimpleReviews[]
   detailedReviews DetailedReviews[]
+  authentication  Authentication?
 }
 
 model Places {
@@ -69,4 +69,12 @@ model DetailedReviews {
   description String?
   user        Users         @relation(fields: [userId], references: [id])
   place       Places        @relation(fields: [placeId], references: [id])
+}
+
+model Authentication {
+  id          Int    @id @default(autoincrement())
+  userId      Int    @unique
+  password    String
+  failedCount Int    @default(0)
+  user        Users  @relation(fields: [userId], references: [id])
 }
