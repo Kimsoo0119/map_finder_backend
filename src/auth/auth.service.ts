@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Users } from '@prisma/client';
 import axios from 'axios';
 import { User } from 'src/common/interface/common-interface';
@@ -11,13 +12,18 @@ export class AuthService {
   private readonly kakaoClientId: string;
   private readonly kakaoRedirectUri: string;
   private readonly kakaoGetUserUri: string;
+  private readonly accessTokenExpiresIn: string;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {
     this.kakaoOAuthApiUrl = process.env.KAKAO_OAUTH_TOKEN_API_URL;
     this.kakaoGrantType = process.env.KAKAO_GRANT_TYPE;
     this.kakaoClientId = process.env.KAKAO_JAVASCRIPT_KEY;
     this.kakaoRedirectUri = process.env.KAKAO_REDIRECT_URI;
     this.kakaoGetUserUri = process.env.KAKAO_GET_USER_URI;
+    this.accessTokenExpiresIn = process.env.ACCESS_TOKEN_EXPIRESIN;
   }
   async signinWithKakao(authorizationCode: string): Promise<string | User> {
     const { data: kakaoOauthServerResponse } = await axios.post(
@@ -45,6 +51,7 @@ export class AuthService {
     if (!user) {
       return userEmail;
     }
+    await this.generateToken(user);
     return user;
   }
 
@@ -54,5 +61,12 @@ export class AuthService {
       select: { id: true, email: true, nickname: true },
     });
     return user;
+  }
+
+  private async generateToken(user) {
+    const accessToken = this.jwtService.sign(user, {
+      expiresIn: this.accessTokenExpiresIn,
+    });
+    console.log(accessToken);
   }
 }
