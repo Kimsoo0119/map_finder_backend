@@ -12,3 +12,9 @@ export interface CrawledNaverPlaceInformations {
   naverPlaceId: string;
   thumUrl: string | null;
 }
+
+export interface User {
+  id: number;
+  email: string;
+  nickname: string;
+}
