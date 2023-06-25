@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { Users } from '@prisma/client';
 import axios from 'axios';
+import { User } from 'src/common/interface/common-interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -17,37 +19,40 @@ export class AuthService {
     this.kakaoRedirectUri = process.env.KAKAO_REDIRECT_URI;
     this.kakaoGetUserUri = process.env.KAKAO_GET_USER_URI;
   }
-  async signinWithKakao(authorizationCode: string) {
-    console.log(
+  async signinWithKakao(authorizationCode: string): Promise<string | User> {
+    const { data: kakaoOauthServerResponse } = await axios.post(
       `${this.kakaoOAuthApiUrl}?grant_type=${this.kakaoGrantType}&client_id=${this.kakaoClientId}&redirect_uri=${this.kakaoRedirectUri}&code=${authorizationCode}`,
+      {
+        headers: {
+          'Content-type': 'application/x-www-form-urlencoded;charset=utf-8',
+        },
+      },
     );
 
-    const data = await axios
-      .post(
-        `${this.kakaoOAuthApiUrl}?grant_type=${this.kakaoGrantType}&client_id=${this.kakaoClientId}&redirect_uri=${this.kakaoRedirectUri}&code=${authorizationCode}`,
-        {
-          headers: {
-            'Content-type': 'application/x-www-form-urlencoded;charset=utf-8',
-          },
+    const { data: kakaoUserInfo } = await axios.post(
+      this.kakaoGetUserUri,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${kakaoOauthServerResponse.access_token}`,
+          'Content-type': 'application/x-www-form-urlencoded',
         },
-      )
-      .then((res) => {
-        if (res.data) {
-          return res.data;
-        }
-      });
-    console.log(data.access_token);
-    const user = await axios
-      .post(
-        this.kakaoGetUserUri,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${data.access_token}`,
-            'Content-type': 'application/x-www-form-urlencoded',
-          },
-        },
-      )
-      .then((res) => console.log(res));
+      },
+    );
+
+    const userEmail: string = kakaoUserInfo.kakao_account.email;
+    const user: User = await this.getUserByEmail(userEmail);
+    if (!user) {
+      return userEmail;
+    }
+    return user;
+  }
+
+  private async getUserByEmail(email): Promise<User> {
+    const user: User = await this.prisma.users.findUnique({
+      where: { email },
+      select: { id: true, email: true, nickname: true },
+    });
+    return user;
   }
 }
