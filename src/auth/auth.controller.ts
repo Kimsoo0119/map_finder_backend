@@ -1,12 +1,19 @@
 import { Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { User } from 'src/common/interface/common-interface';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Get('/signin/kakao')
-  async signinKakao(@Query('authorizationCode') authorizationCode: string) {
-    await this.authService.signinWithKakao(authorizationCode);
+  async signInKakao(
+    @Query('authorizationCode') authorizationCode: string,
+  ): Promise<string | User> {
+    const user: string | User = await this.authService.signInWithKakao(
+      authorizationCode,
+    );
+
+    return user;
   }
 }
