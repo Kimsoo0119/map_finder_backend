@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Users } from '@prisma/client';
 import axios from 'axios';
-import { User } from 'src/common/interface/common-interface';
+import { Token, User } from 'src/common/interface/common-interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -13,6 +12,7 @@ export class AuthService {
   private readonly kakaoRedirectUri: string;
   private readonly kakaoGetUserUri: string;
   private readonly accessTokenExpiresIn: string;
+  private readonly refreshTokenExpiresIn: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -24,8 +24,9 @@ export class AuthService {
     this.kakaoRedirectUri = process.env.KAKAO_REDIRECT_URI;
     this.kakaoGetUserUri = process.env.KAKAO_GET_USER_URI;
     this.accessTokenExpiresIn = process.env.ACCESS_TOKEN_EXPIRESIN;
+    this.refreshTokenExpiresIn = process.env.REFRESH_TOKEN_EXPIRESIN;
   }
-  async signinWithKakao(authorizationCode: string): Promise<string | User> {
+  async signInWithKakao(authorizationCode: string): Promise<string | User> {
     const { data: kakaoOauthServerResponse } = await axios.post(
       `${this.kakaoOAuthApiUrl}?grant_type=${this.kakaoGrantType}&client_id=${this.kakaoClientId}&redirect_uri=${this.kakaoRedirectUri}&code=${authorizationCode}`,
       {
@@ -51,22 +52,40 @@ export class AuthService {
     if (!user) {
       return userEmail;
     }
-    await this.generateToken(user);
+
+    user.token = this.generateJwtToken(user);
+
     return user;
   }
 
-  private async getUserByEmail(email): Promise<User> {
+  private async getUserByEmail(email: string): Promise<User> {
     const user: User = await this.prisma.users.findUnique({
       where: { email },
-      select: { id: true, email: true, nickname: true },
+      select: { id: true, nickname: true },
     });
     return user;
   }
 
-  private async generateToken(user) {
-    const accessToken = this.jwtService.sign(user, {
+  private generateJwtToken(userPayload: User): Token {
+    const accessToken = this.generateAccessToken(userPayload);
+    const refreshToken = this.generateRefreshToken(userPayload);
+
+    return { accessToken, refreshToken };
+  }
+
+  private generateAccessToken(userPayload: User): string {
+    const accessToken = this.jwtService.sign(userPayload, {
       expiresIn: this.accessTokenExpiresIn,
     });
-    console.log(accessToken);
+
+    return accessToken;
+  }
+
+  private generateRefreshToken(userPayload: User): string {
+    const refreshToken = this.jwtService.sign(userPayload, {
+      expiresIn: this.refreshTokenExpiresIn,
+    });
+
+    return refreshToken;
   }
 }
