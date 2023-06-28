@@ -26,7 +26,20 @@ export class AuthService {
     this.accessTokenExpiresIn = process.env.ACCESS_TOKEN_EXPIRESIN;
     this.refreshTokenExpiresIn = process.env.REFRESH_TOKEN_EXPIRESIN;
   }
+
   async signInWithKakao(authorizationCode: string): Promise<string | User> {
+    const userEmail: string = await this.getKakaoUserEmail(authorizationCode);
+    const user: User = await this.getUserByEmail(userEmail);
+    if (!user) {
+      return userEmail;
+    }
+
+    user.token = this.generateJwtToken(user);
+
+    return user;
+  }
+
+  private async getKakaoUserEmail(authorizationCode): Promise<string> {
     const { data: kakaoOauthServerResponse } = await axios.post(
       `${this.kakaoOAuthApiUrl}?grant_type=${this.kakaoGrantType}&client_id=${this.kakaoClientId}&redirect_uri=${this.kakaoRedirectUri}&code=${authorizationCode}`,
       {
@@ -47,15 +60,7 @@ export class AuthService {
       },
     );
 
-    const userEmail: string = kakaoUserInfo.kakao_account.email;
-    const user: User = await this.getUserByEmail(userEmail);
-    if (!user) {
-      return userEmail;
-    }
-
-    user.token = this.generateJwtToken(user);
-
-    return user;
+    return kakaoUserInfo.kakao_account.email;
   }
 
   private async getUserByEmail(email: string): Promise<User> {
