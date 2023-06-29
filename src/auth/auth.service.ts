@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
 import { Token, User } from 'src/common/interface/common-interface';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,8 @@ export class AuthService {
   private readonly refreshTokenExpiresIn: string;
 
   constructor(
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
   ) {
@@ -33,7 +36,7 @@ export class AuthService {
     if (!user) {
       return userEmail;
     }
-    user.token = this.generateJwtToken(user);
+    user.token = await this.generateJwtToken(user);
 
     return user;
   }
@@ -70,13 +73,20 @@ export class AuthService {
     return user;
   }
 
-  private generateJwtToken(userPayload: User): Token {
+  private async generateJwtToken(userPayload: User): Promise<Token> {
     const accessToken = this.jwtService.sign(userPayload, {
       expiresIn: this.accessTokenExpiresIn,
     });
     const refreshToken = this.jwtService.sign(userPayload, {
-      expiresIn: this.accessTokenExpiresIn,
+      expiresIn: this.refreshTokenExpiresIn,
     });
+
+    const convertedRefreshTokenExpiresIn = parseInt(this.refreshTokenExpiresIn);
+    await this.cacheManager.set(
+      `${userPayload.id}`,
+      refreshToken,
+      convertedRefreshTokenExpiresIn,
+    );
 
     return { accessToken, refreshToken };
   }

@@ -21,19 +21,4 @@ export class AuthController {
 
     return user;
   }
-
-  @Get('/cache')
-  async getCache() {
-    try {
-      const savedTime = await this.cacheManager.get('time');
-      if (savedTime) {
-        return 'saved time: ' + savedTime;
-      }
-      const now = new Date().getTime();
-      await this.cacheManager.set('time', now);
-      return 'save new time: ' + now;
-    } catch (error) {
-      console.log(error);
-    }
-  }
 }
