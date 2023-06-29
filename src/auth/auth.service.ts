@@ -33,7 +33,6 @@ export class AuthService {
     if (!user) {
       return userEmail;
     }
-
     user.token = this.generateJwtToken(user);
 
     return user;
@@ -72,25 +71,13 @@ export class AuthService {
   }
 
   private generateJwtToken(userPayload: User): Token {
-    const accessToken = this.generateAccessToken(userPayload);
-    const refreshToken = this.generateRefreshToken(userPayload);
-
-    return { accessToken, refreshToken };
-  }
-
-  private generateAccessToken(userPayload: User): string {
     const accessToken = this.jwtService.sign(userPayload, {
       expiresIn: this.accessTokenExpiresIn,
     });
-
-    return accessToken;
-  }
-
-  private generateRefreshToken(userPayload: User): string {
     const refreshToken = this.jwtService.sign(userPayload, {
-      expiresIn: this.refreshTokenExpiresIn,
+      expiresIn: this.accessTokenExpiresIn,
     });
 
-    return refreshToken;
+    return { accessToken, refreshToken };
   }
 }
