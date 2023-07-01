@@ -17,24 +17,36 @@ import {
 } from 'src/common/interface/common-interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { load } from 'cheerio';
-
-const apiHeaders = {
-  'X-Naver-Client-Id': process.env.CLIENT_ID,
-  'X-Naver-Client-Secret': process.env.CLIENT_SECRET,
-};
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PlacesService {
-  constructor(private readonly prisma: PrismaService) {}
-  private readonly naverLocalSearchApiUrl = process.env.NAVER_LOCAL_SEARCH_URL;
-  private readonly naverMapUrl = process.env.NAVER_MAP_URL;
-  private readonly naverMapUrlOption = process.env.NAVER_MAP_URL_OPTION;
-  private readonly naverPlaceUrl = process.env.NAVER_PLACE_URL;
-  private readonly naverPlaceBaseUrl = process.env.NAVER_PLACE_BASE_URL;
-  private readonly naverHeaders = {
-    'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36',
-  };
+  private readonly naverLocalSearchApiUrl: string;
+  private readonly naverMapUrl: string;
+  private readonly naverMapUrlOption: string;
+  private readonly naverPlaceBaseUrl: string;
+  private readonly naverHeaders: object;
+  private readonly apiHeaders: object;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
+    this.naverLocalSearchApiUrl = configService.get<string>(
+      'NAVER_LOCAL_SEARCH_URL',
+    );
+    this.naverMapUrl = configService.get<string>('NAVER_MAP_URL');
+    this.naverMapUrlOption = configService.get<string>('NAVER_MAP_URL_OPTION');
+    this.naverPlaceBaseUrl = configService.get<string>('NAVER_PLACE_BASE_URL');
+    this.naverHeaders = {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36',
+    };
+    this.apiHeaders = {
+      'X-Naver-Client-Id': configService.get<string>('CLIENT_ID'),
+      'X-Naver-Client-Secret': configService.get<string>('CLIENT_SECRET'),
+    };
+  }
 
   async getPlaceWithCrawl(place: PlaceDto) {
     const { title, address } = place;
@@ -103,7 +115,7 @@ export class PlacesService {
     const naverPlaceUrl = `${this.naverPlaceBaseUrl}${extractedPlaceId}`;
 
     const { request } = await axios.get(naverPlaceUrl, {
-      headers: apiHeaders,
+      headers: this.apiHeaders,
     });
 
     const naverPlaceReviewUrl = request.res.responseUrl.replace(
@@ -158,7 +170,7 @@ export class PlacesService {
     };
 
     const { data } = await axios.get(this.naverLocalSearchApiUrl, {
-      headers: apiHeaders,
+      headers: this.apiHeaders,
       params,
     });
 
