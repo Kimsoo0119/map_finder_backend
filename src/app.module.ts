@@ -8,16 +8,18 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtCustomModule } from './common/config/jwt.module.config';
 import { CacheCustomModule } from './common/config/cache.module.config';
+import { CustomConfigModule } from './common/config/config-module.config';
 
 @Module({
   imports: [
+    CustomConfigModule,
+    CacheCustomModule,
+    JwtCustomModule,
     PlacesModule,
     PrismaModule,
     ReviewsModule,
     UsersModule,
     AuthModule,
-    JwtCustomModule,
-    CacheCustomModule,
   ],
   controllers: [AppController],
   providers: [AppService],

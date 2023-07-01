@@ -16,4 +16,8 @@ export class AuthController {
 
     return user;
   }
+  @Get('/test')
+  async test() {
+    await this.authService.test();
+  }
 }

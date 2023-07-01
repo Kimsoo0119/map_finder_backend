@@ -2,6 +2,7 @@ import { CacheModule } from '@nestjs/common';
 import * as redisStore from 'cache-manager-ioredis';
 
 export const CacheCustomModule = CacheModule.register({
+  isGlobal: true,
   ttl: parseInt(process.env.REDIS_TOKEN_TTL),
   useFactory: () => ({
     store: redisStore,

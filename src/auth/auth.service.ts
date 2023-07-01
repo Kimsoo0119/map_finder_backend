@@ -10,6 +10,7 @@ import axios from 'axios';
 import { Token, User } from 'src/common/interface/common-interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Cache } from 'cache-manager';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,7 @@ export class AuthService {
     private cacheManager: Cache,
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {
     this.kakaoOAuthApiUrl = process.env.KAKAO_OAUTH_TOKEN_API_URL;
     this.kakaoGrantType = process.env.KAKAO_GRANT_TYPE;
@@ -94,5 +96,9 @@ export class AuthService {
     await this.cacheManager.set(`${userPayload.id}`, refreshToken);
 
     return { accessToken, refreshToken };
+  }
+
+  async test() {
+    console.log(this.configService.get('CONFIG_TEST'));
   }
 }
