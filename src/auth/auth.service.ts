@@ -1,4 +1,10 @@
-import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  CACHE_MANAGER,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
 import { Token, User } from 'src/common/interface/common-interface';
@@ -42,27 +48,31 @@ export class AuthService {
   }
 
   private async getKakaoUserEmail(authorizationCode): Promise<string> {
-    const { data: kakaoOauthServerResponse } = await axios.post(
-      `${this.kakaoOAuthApiUrl}?grant_type=${this.kakaoGrantType}&client_id=${this.kakaoClientId}&redirect_uri=${this.kakaoRedirectUri}&code=${authorizationCode}`,
-      {
-        headers: {
-          'Content-type': 'application/x-www-form-urlencoded;charset=utf-8',
+    try {
+      const { data: kakaoOauthServerResponse } = await axios.post(
+        `${this.kakaoOAuthApiUrl}?grant_type=${this.kakaoGrantType}&client_id=${this.kakaoClientId}&redirect_uri=${this.kakaoRedirectUri}&code=${authorizationCode}`,
+        {
+          headers: {
+            'Content-type': 'application/x-www-form-urlencoded;charset=utf-8',
+          },
         },
-      },
-    );
+      );
 
-    const { data: kakaoUserInfo } = await axios.post(
-      this.kakaoGetUserUri,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${kakaoOauthServerResponse.access_token}`,
-          'Content-type': 'application/x-www-form-urlencoded',
+      const { data: kakaoUserInfo } = await axios.post(
+        this.kakaoGetUserUri,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${kakaoOauthServerResponse.access_token}`,
+            'Content-type': 'application/x-www-form-urlencoded',
+          },
         },
-      },
-    );
+      );
 
-    return kakaoUserInfo.kakao_account.email;
+      return kakaoUserInfo.kakao_account.email;
+    } catch (error) {
+      throw new BadRequestException(`카카오 서버 요청 실패`);
+    }
   }
 
   private async getUserByEmail(email: string): Promise<User> {
@@ -81,12 +91,7 @@ export class AuthService {
       expiresIn: this.refreshTokenExpiresIn,
     });
 
-    const convertedRefreshTokenExpiresIn = parseInt(this.refreshTokenExpiresIn);
-    await this.cacheManager.set(
-      `${userPayload.id}`,
-      refreshToken,
-      convertedRefreshTokenExpiresIn,
-    );
+    await this.cacheManager.set(`${userPayload.id}`, refreshToken);
 
     return { accessToken, refreshToken };
   }
