@@ -10,6 +10,7 @@ import axios from 'axios';
 import { Token, User } from 'src/common/interface/common-interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Cache } from 'cache-manager';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -26,14 +27,21 @@ export class AuthService {
     private cacheManager: Cache,
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {
-    this.kakaoOAuthApiUrl = process.env.KAKAO_OAUTH_TOKEN_API_URL;
-    this.kakaoGrantType = process.env.KAKAO_GRANT_TYPE;
-    this.kakaoClientId = process.env.KAKAO_JAVASCRIPT_KEY;
-    this.kakaoRedirectUri = process.env.KAKAO_REDIRECT_URI;
-    this.kakaoGetUserUri = process.env.KAKAO_GET_USER_URI;
-    this.accessTokenExpiresIn = process.env.ACCESS_TOKEN_EXPIRESIN;
-    this.refreshTokenExpiresIn = process.env.REFRESH_TOKEN_EXPIRESIN;
+    this.kakaoOAuthApiUrl = configService.get<string>(
+      'KAKAO_OAUTH_TOKEN_API_URL',
+    );
+    this.kakaoGrantType = configService.get<string>('KAKAO_GRANT_TYPE');
+    this.kakaoClientId = configService.get<string>('KAKAO_JAVASCRIPT_KEY');
+    this.kakaoRedirectUri = configService.get<string>('KAKAO_REDIRECT_URI');
+    this.kakaoGetUserUri = configService.get<string>('KAKAO_GET_USER_URI');
+    this.accessTokenExpiresIn = configService.get<string>(
+      'ACCESS_TOKEN_EXPIRESIN',
+    );
+    this.refreshTokenExpiresIn = configService.get<string>(
+      'REFRESH_TOKEN_EXPIRESIN',
+    );
   }
 
   async signInWithKakao(authorizationCode: string): Promise<string | User> {
@@ -80,6 +88,7 @@ export class AuthService {
       where: { email },
       select: { id: true, nickname: true },
     });
+
     return user;
   }
 
@@ -94,5 +103,9 @@ export class AuthService {
     await this.cacheManager.set(`${userPayload.id}`, refreshToken);
 
     return { accessToken, refreshToken };
+  }
+
+  async test() {
+    console.log(this.configService.get('CONFIG_TEST'));
   }
 }

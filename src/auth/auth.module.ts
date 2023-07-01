@@ -5,7 +5,7 @@ import { JwtCustomModule } from 'src/common/config/jwt.module.config';
 import { CacheCustomModule } from 'src/common/config/cache.module.config';
 
 @Module({
-  imports: [JwtCustomModule, CacheCustomModule],
+  imports: [JwtCustomModule],
   providers: [AuthService],
   controllers: [AuthController],
 })
