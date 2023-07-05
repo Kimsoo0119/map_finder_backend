@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
 import { HttpExceptionFilter } from './common/exceptions/http-exception.filter';
 import { PrismaExceptionFilter } from './common/exceptions/prisma-exception.filter';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,6 +23,7 @@ async function bootstrap() {
 
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalFilters(new PrismaExceptionFilter());
+  app.use(cookieParser());
 
   await app.listen(3005);
 }
