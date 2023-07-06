@@ -106,6 +106,7 @@ export class AuthService {
   }
 
   async test() {
-    console.log(this.configService.get('CONFIG_TEST'));
+    console.log('test');
+    return 1;
   }
 }

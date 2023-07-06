@@ -24,3 +24,10 @@ export interface Token {
   accessToken: string;
   refreshToken: string;
 }
+
+export interface TokenPayload {
+  id: number;
+  nickname: string;
+  iat: number;
+  exp: number;
+}
