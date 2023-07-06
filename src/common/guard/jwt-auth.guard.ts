@@ -18,7 +18,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const parentCanActivate = (await super.canActivate(context)) as boolean;
     if (!parentCanActivate) {
-      throw new ForbiddenException(`인증에 실패했습니다.`);
+      throw new UnauthorizedException(`인증에 실패했습니다.`);
     }
 
     const request = context.switchToHttp().getRequest();
