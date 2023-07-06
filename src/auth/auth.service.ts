@@ -44,15 +44,16 @@ export class AuthService {
     );
   }
 
-  async signInWithKakao(authorizationCode: string): Promise<string | User> {
-    const userEmail: string = await this.getKakaoUserEmail(authorizationCode);
-    const user: User = await this.getUserByEmail(userEmail);
+  async signInWithKakao(authorizationCode: string): Promise<User> {
+    const email: string = await this.getKakaoUserEmail(authorizationCode);
+    const user: User = await this.getUserByEmail(email);
     if (!user) {
-      return userEmail;
+      return { email };
     }
-    user.token = await this.generateJwtToken(user);
 
-    return user;
+    const token = await this.generateJwtToken(user);
+
+    return { token };
   }
 
   private async getKakaoUserEmail(authorizationCode): Promise<string> {

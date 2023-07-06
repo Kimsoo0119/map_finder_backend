@@ -16,8 +16,8 @@ export interface CrawledNaverPlaceInformations {
 }
 
 export interface User {
-  id: number;
-  nickname: string;
+  id?: number;
+  nickname?: string;
   token?: Token;
   email?: string;
 }
