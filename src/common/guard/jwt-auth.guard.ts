@@ -8,7 +8,10 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { Users } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { TokenPayload } from '../interface/common-interface';
+import {
+  RequestWithTokenPayload,
+  TokenPayload,
+} from '../interface/common-interface';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -21,7 +24,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       throw new UnauthorizedException(`인증에 실패했습니다.`);
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request: RequestWithTokenPayload = context
+      .switchToHttp()
+      .getRequest();
     const tokenUser: TokenPayload = request.user;
     const { targetName, targetId } = request.body;
 
@@ -31,7 +36,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (!authorizedUser) {
       throw new NotFoundException(`유효하지않은 유저입니다.`);
     }
-    request.user = authorizedUser;
+    request.authorizedUser = authorizedUser;
 
     if (targetName && targetId) {
       try {

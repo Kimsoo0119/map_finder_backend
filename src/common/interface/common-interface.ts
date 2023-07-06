@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 export interface CrawledNaverReview {
   naverReviewerCounts: string;
   naverStars: string;
@@ -30,4 +32,9 @@ export interface TokenPayload {
   nickname: string;
   iat: number;
   exp: number;
+}
+
+export interface RequestWithTokenPayload extends Request {
+  user: TokenPayload;
+  authorizedUser: User;
 }
