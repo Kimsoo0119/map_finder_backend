@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from 'src/common/interface/common-interface';
 import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
@@ -30,11 +30,20 @@ export class AuthController {
 
   @Get('/token')
   @UseGuards(RefreshTokenGuard)
-  async refreshRefreshToken() {}
+  async refreshJwtToken(
+    @GetUser() user: User,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { accessToken, refreshToken } =
+      await this.authService.generateJwtToken({
+        id: user.id,
+        nickname: user.nickname,
+      });
 
-  @Get('/test')
-  @UseGuards(AccessTokenGuard)
-  async test(@GetUser() user: User) {
-    console.log(user);
+    response.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+    });
+
+    return { accessToken, msg: '토큰 재발급 완료' };
   }
 }

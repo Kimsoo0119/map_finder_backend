@@ -93,7 +93,7 @@ export class AuthService {
     return user;
   }
 
-  private async generateJwtToken(userPayload: User): Promise<Token> {
+  async generateJwtToken(userPayload: User): Promise<Token> {
     const accessToken = this.jwtService.sign(userPayload, {
       expiresIn: this.accessTokenExpiresIn,
     });
