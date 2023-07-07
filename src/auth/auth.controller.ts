@@ -1,9 +1,10 @@
 import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from 'src/common/interface/common-interface';
-import { JwtAuthGuard } from 'src/common/guard/jwt-auth.guard';
+import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { Response } from 'express';
+import { RefreshTokenGuard } from 'src/common/guard/refresh-token.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -27,8 +28,12 @@ export class AuthController {
     return { unregisteredUserEmail };
   }
 
+  @Get('/token')
+  @UseGuards(RefreshTokenGuard)
+  async refreshRefreshToken() {}
+
   @Get('/test')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AccessTokenGuard)
   async test(@GetUser() user: User) {
     console.log(user);
   }
