@@ -34,8 +34,7 @@ export class RefreshTokenGuard extends AuthGuard('refreshToken') {
       .switchToHttp()
       .getRequest();
     const tokenUser: TokenPayload = request.user;
-
-    const cookiesRefreshToken = request.cookies.refreshToken;
+    const cookiesRefreshToken: string = request.cookies.refreshToken;
 
     const authorizedUser: Users = await this.prisma.users.findUnique({
       where: { id: tokenUser.id },

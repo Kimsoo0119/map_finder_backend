@@ -5,6 +5,7 @@ import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { Response } from 'express';
 import { RefreshTokenGuard } from 'src/common/guard/refresh-token.guard';
+import { GetAuthorizedUser } from './decorator/get-autholized-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -31,13 +32,13 @@ export class AuthController {
   @Get('/token')
   @UseGuards(RefreshTokenGuard)
   async refreshJwtToken(
-    @GetUser() user: User,
+    @GetAuthorizedUser() authorizedUser: User,
     @Res({ passthrough: true }) response: Response,
   ) {
     const { accessToken, refreshToken } =
       await this.authService.generateJwtToken({
-        id: user.id,
-        nickname: user.nickname,
+        id: authorizedUser.id,
+        nickname: authorizedUser.nickname,
       });
 
     response.cookie('refreshToken', refreshToken, {
