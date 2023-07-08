@@ -1,9 +1,11 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from 'src/common/interface/common-interface';
-import { JwtAuthGuard } from 'src/common/guard/jwt-auth.guard';
+import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { Response } from 'express';
+import { RefreshTokenGuard } from 'src/common/guard/refresh-token.guard';
+import { GetAuthorizedUser } from './decorator/get-autholized-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -27,9 +29,22 @@ export class AuthController {
     return { unregisteredUserEmail };
   }
 
-  @Get('/test')
-  @UseGuards(JwtAuthGuard)
-  async test(@GetUser() user: User) {
-    console.log(user);
+  @Get('/token')
+  @UseGuards(RefreshTokenGuard)
+  async refreshJwtToken(
+    @GetAuthorizedUser() authorizedUser: User,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { accessToken, refreshToken } =
+      await this.authService.generateJwtToken({
+        id: authorizedUser.id,
+        nickname: authorizedUser.nickname,
+      });
+
+    response.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+    });
+
+    return { accessToken, msg: '토큰 재발급 완료' };
   }
 }

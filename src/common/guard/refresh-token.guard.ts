@@ -1,21 +1,27 @@
 import {
+  CACHE_MANAGER,
   ExecutionContext,
-  ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Users } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
 import {
   RequestWithTokenPayload,
   TokenPayload,
 } from '../interface/common-interface';
+import { Cache } from 'cache-manager';
+import { Users } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private readonly prisma: PrismaService) {
+export class RefreshTokenGuard extends AuthGuard('refreshToken') {
+  constructor(
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
+    private readonly prisma: PrismaService,
+  ) {
     super();
   }
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -28,7 +34,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       .switchToHttp()
       .getRequest();
     const tokenUser: TokenPayload = request.user;
-    const { targetName, targetId } = request.body;
+    const cookiesRefreshToken: string = request.cookies.refreshToken;
 
     const authorizedUser: Users = await this.prisma.users.findUnique({
       where: { id: tokenUser.id },
@@ -38,21 +44,19 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
     request.authorizedUser = authorizedUser;
 
-    if (targetName && targetId) {
-      try {
-        const { userId: targetUserId } = await this.prisma[
-          targetName
-        ].findUnique({
-          where: { id: targetId },
-          select: { userId: true },
-        });
+    const cachedRefreshToken = await this.cacheManager.get(`${tokenUser.id}`);
 
-        if (targetUserId !== tokenUser.id) {
-          throw new ForbiddenException(`권한이 없습니다.`);
-        }
-      } catch (error) {
-        throw new NotFoundException(`대상이 존재하지 않습니다.`);
-      }
+    if (!cachedRefreshToken) {
+      throw new UnauthorizedException(
+        `로그인 정보가 만료되었습니다 다시 로그인해 주세요`,
+      );
+    }
+
+    if (cookiesRefreshToken !== cachedRefreshToken) {
+      await this.cacheManager.del(`${tokenUser.id}`);
+      throw new UnauthorizedException(
+        `잘못된 로그인 정보입니다. 다시 로그인해 주세요`,
+      );
     }
 
     return true;

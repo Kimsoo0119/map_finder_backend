@@ -93,7 +93,7 @@ export class AuthService {
     return user;
   }
 
-  private async generateJwtToken(userPayload: User): Promise<Token> {
+  async generateJwtToken(userPayload: User): Promise<Token> {
     const accessToken = this.jwtService.sign(userPayload, {
       expiresIn: this.accessTokenExpiresIn,
     });
@@ -101,13 +101,10 @@ export class AuthService {
       expiresIn: this.refreshTokenExpiresIn,
     });
 
-    await this.cacheManager.set(`${userPayload.id}`, refreshToken);
+    await this.cacheManager.set(`${userPayload.id}`, refreshToken, {
+      ttl: this.configService.get<number>('REDIS_DATA_TTL'),
+    });
 
     return { accessToken, refreshToken };
-  }
-
-  async test() {
-    console.log('test');
-    return 1;
   }
 }
