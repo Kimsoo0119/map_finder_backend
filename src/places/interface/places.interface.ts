@@ -2,6 +2,7 @@ import { NaverReview } from 'src/common/interface/common-interface';
 
 export interface PlaceInformation {
   title: string;
+  regionId?: number;
   address: string;
   category: string;
   telephone?: string;
