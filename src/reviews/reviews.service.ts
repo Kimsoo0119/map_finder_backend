@@ -20,7 +20,7 @@ export class ReviewsService {
   async getSimpleReviews(placeId: number): Promise<SimpleReview[]> {
     const simpleReviews: SimpleReview[] =
       await this.prisma.simpleReviews.findMany({
-        where: { placeId },
+        where: { place_id: placeId },
         select: {
           id: true,
           description: true,
@@ -33,11 +33,13 @@ export class ReviewsService {
   }
 
   async createSimpleReview(createReviewDto: CreateReviewDto): Promise<void> {
-    const { userId, placeId } = createReviewDto;
+    const { userId, placeId, ...rest } = createReviewDto;
 
     await this.checkUserExists(userId);
     await this.checkPlaceExists(placeId);
-    await this.prisma.simpleReviews.create({ data: createReviewDto });
+    await this.prisma.simpleReviews.create({
+      data: { user_id: userId, place_id: placeId, ...rest },
+    });
   }
 
   private async checkUserExists(userId: number): Promise<void> {
@@ -105,19 +107,19 @@ export class ReviewsService {
     }
 
     await this.prisma.simpleReviews.deleteMany({
-      where: { id: reviewId, userId },
+      where: { id: reviewId, user_id: userId },
     });
   }
 
   async getDetailedReviews(placeId: number): Promise<DetailedReview[]> {
     const detailedReviews: DetailedReview[] =
       await this.prisma.detailedReviews.findMany({
-        where: { placeId },
+        where: { place_id: placeId },
         select: {
           id: true,
-          createdAt: true,
-          updatedAt: true,
-          isUnisex: true,
+          created_at: true,
+          updated_at: true,
+          is_unisex: true,
           location: true,
           description: true,
           user: { select: { nickname: true } },
@@ -130,7 +132,7 @@ export class ReviewsService {
   async getSimpleReviewsByUserId(userId: number): Promise<SimpleReview[]> {
     const simpleReviews: SimpleReview[] =
       await this.prisma.simpleReviews.findMany({
-        where: { userId },
+        where: { user_id: userId },
         select: {
           id: true,
           description: true,
@@ -145,12 +147,12 @@ export class ReviewsService {
   async getDetailedReviewsByUserId(userId: number): Promise<DetailedReview[]> {
     const detailedReviews: DetailedReview[] =
       await this.prisma.detailedReviews.findMany({
-        where: { userId },
+        where: { user_id: userId },
         select: {
           id: true,
-          createdAt: true,
-          updatedAt: true,
-          isUnisex: true,
+          created_at: true,
+          updated_at: true,
+          is_unisex: true,
           location: true,
           description: true,
           user: { select: { nickname: true } },
@@ -163,11 +165,18 @@ export class ReviewsService {
   async createDetailedReview(
     createDetailedReviewDto: CreateDetailedReviewDto,
   ): Promise<void> {
-    const { userId, placeId } = createDetailedReviewDto;
+    const { userId, placeId, isUnisex, ...rest } = createDetailedReviewDto;
 
     await this.checkUserExists(userId);
     await this.checkPlaceExists(placeId);
-    await this.prisma.detailedReviews.create({ data: createDetailedReviewDto });
+    await this.prisma.detailedReviews.create({
+      data: {
+        user_id: userId,
+        place_id: placeId,
+        is_unisex: isUnisex,
+        ...rest,
+      },
+    });
   }
 
   async updateDetailedReview(
@@ -189,7 +198,7 @@ export class ReviewsService {
 
     await this.prisma.detailedReviews.update({
       where: { id: reviewId },
-      data: { description, isUnisex, location },
+      data: { description, is_unisex: isUnisex, location },
     });
   }
 
@@ -200,14 +209,14 @@ export class ReviewsService {
   }): Promise<boolean> {
     const detailedReview: DetailedReviews =
       await this.prisma.detailedReviews.findFirst({
-        where: { id: reviewId, placeId },
+        where: { id: reviewId, place_id: placeId },
       });
 
     if (!detailedReview) {
       throw new NotFoundException(`해당 리뷰가 존재하지 않습니다.`);
     }
 
-    return detailedReview.userId === userId ? true : false;
+    return detailedReview.user_id === userId ? true : false;
   }
 
   private async checkSimpleReviewAuthorship({
@@ -217,14 +226,14 @@ export class ReviewsService {
   }): Promise<boolean> {
     const simpleReview: SimpleReviews =
       await this.prisma.simpleReviews.findFirst({
-        where: { id: reviewId, placeId },
+        where: { id: reviewId, place_id: placeId },
       });
 
     if (!simpleReview) {
       throw new NotFoundException(`해당 리뷰가 존재하지 않습니다.`);
     }
 
-    return simpleReview.userId === userId ? true : false;
+    return simpleReview.user_id === userId ? true : false;
   }
 
   async deleteDetailedReview({

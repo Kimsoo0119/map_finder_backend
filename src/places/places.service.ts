@@ -62,10 +62,10 @@ export class PlacesService {
     if (naverReviews) {
       const crawledPlace: PlaceInformation = {
         ...place,
-        naverStars,
-        naverReviewerCounts,
-        naverPlaceId,
-        thumUrl,
+        naver_stars: naverStars,
+        naver_reviewer_counts: naverReviewerCounts,
+        naver_place_id: naverPlaceId,
+        thum_url: thumUrl,
       };
 
       const createdPlaceId: number = await this.createPlace(crawledPlace);
@@ -140,7 +140,7 @@ export class PlacesService {
     const reviewData = naverReviews
       .filter((review) => review.description)
       .map((review) => ({
-        placeId,
+        place_id: placeId,
         description: review.description,
       }));
 
