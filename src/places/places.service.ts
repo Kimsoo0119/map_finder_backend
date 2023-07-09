@@ -5,11 +5,7 @@ import {
 } from '@nestjs/common';
 import axios from 'axios';
 import { PlaceDto } from './dto/place.dto';
-import {
-  PlaceAndReviews,
-  PlaceInformation,
-  PlaceSummary,
-} from './interface/places.interface';
+import { PlaceInformation, PlaceSummary } from './interface/places.interface';
 import { parseStringPromise } from 'xml2js';
 import {
   CrawledNaverPlaceInformations,

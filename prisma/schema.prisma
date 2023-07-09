@@ -26,6 +26,7 @@ model Users {
 model Places {
   id                  Int               @id @default(autoincrement())
   title               String
+  regionId            Int?
   address             String
   category            String?
   thumUrl             String?
@@ -37,6 +38,7 @@ model Places {
   naverReview         NaverReviews[]
   simpleReviews       SimpleReviews[]
   detailedReviews     DetailedReviews[]
+  region              Regions?          @relation(fields: [regionId], references: [id])
 }
 
 model NaverReviews {
@@ -77,4 +79,11 @@ model Authentication {
   password    String
   failedCount Int    @default(0)
   user        Users  @relation(fields: [userId], references: [id])
+}
+
+model Regions {
+  id                      Int      @id @default(autoincrement())
+  administrative_district String
+  district                String?
+  place                   Places[]
 }
