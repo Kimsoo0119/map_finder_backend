@@ -14,71 +14,71 @@ datasource db {
 }
 
 model Users {
-  id              Int               @id @default(autoincrement())
-  email           String            @unique
-  nickname        String
-  createdAt       DateTime          @default(now())
-  simpleReviews   SimpleReviews[]
-  detailedReviews DetailedReviews[]
-  authentication  Authentication?
+  id               Int               @id @default(autoincrement())
+  email            String            @unique
+  nickname         String
+  created_at       DateTime          @default(now())
+  simple_reviews   SimpleReviews[]
+  detailed_reviews DetailedReviews[]
+  authentication   Authentication?
 }
 
 model Places {
-  id                  Int               @id @default(autoincrement())
-  title               String
-  regionId            Int?
-  address             String
-  category            String?
-  thumUrl             String?
-  telephone           String?
-  stars               String?
-  naverPlaceId        String?
-  naverStars          String?
-  naverReviewerCounts String?
-  naverReview         NaverReviews[]
-  simpleReviews       SimpleReviews[]
-  detailedReviews     DetailedReviews[]
-  region              Regions?          @relation(fields: [regionId], references: [id])
+  id                    Int               @id @default(autoincrement())
+  title                 String
+  region_id             Int?
+  address               String
+  category              String?
+  thum_url              String?
+  telephone             String?
+  stars                 String?
+  naver_place_id        String?
+  naver_stars           String?
+  naver_reviewer_counts String?
+  naver_review          NaverReviews[]
+  simple_reviews        SimpleReviews[]
+  detailed_reviews      DetailedReviews[]
+  region                Regions?          @relation(fields: [region_id], references: [id])
 }
 
 model NaverReviews {
   id          Int    @id @default(autoincrement())
-  placeId     Int
+  place_id    Int
   description String
-  place       Places @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  place       Places @relation(fields: [place_id], references: [id], onDelete: Cascade)
 }
 
 model SimpleReviews {
   id          Int      @id @default(autoincrement())
-  placeId     Int
-  userId      Int
+  place_id    Int
+  user_id     Int
   stars       Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
   description String?
-  place       Places   @relation(fields: [placeId], references: [id])
-  user        Users    @relation(fields: [userId], references: [id])
+  place       Places   @relation(fields: [place_id], references: [id])
+  user        Users    @relation(fields: [user_id], references: [id])
 }
 
 model DetailedReviews {
   id          Int           @id @default(autoincrement())
-  placeId     Int
-  userId      Int
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  isUnisex    Boolean?
+  place_id    Int
+  user_id     Int
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+  is_unisex   Boolean?
   location    LocationType?
   description String?
-  user        Users         @relation(fields: [userId], references: [id])
-  place       Places        @relation(fields: [placeId], references: [id])
+  user        Users         @relation(fields: [user_id], references: [id])
+  place       Places        @relation(fields: [place_id], references: [id])
 }
 
 model Authentication {
-  id          Int    @id @default(autoincrement())
-  userId      Int    @unique
-  password    String
-  failedCount Int    @default(0)
-  user        Users  @relation(fields: [userId], references: [id])
+  id           Int    @id @default(autoincrement())
+  user_id      Int    @unique
+  password     String
+  failed_count Int    @default(0)
+  user         Users  @relation(fields: [user_id], references: [id])
 }
 
 model Regions {

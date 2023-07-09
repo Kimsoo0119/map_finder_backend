@@ -6,9 +6,9 @@ export interface DetailedReview {
   user: {
     nickname: string;
   };
-  createdAt: Date;
-  updatedAt: Date;
-  isUnisex: boolean;
+  created_at: Date;
+  updated_at: Date;
+  is_unisex: boolean;
   location: LocationType;
 }
 
