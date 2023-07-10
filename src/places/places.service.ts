@@ -5,7 +5,13 @@ import {
 } from '@nestjs/common';
 import axios from 'axios';
 import { PlaceDto } from './dto/place.dto';
-import { PlaceInformation, PlaceSummary } from './interface/places.interface';
+import {
+  CrawledNaverPlace,
+  ExtractAddress,
+  PlaceInformation,
+  PlaceSummary,
+  PlacesCreateInput,
+} from './interface/places.interface';
 import { parseStringPromise } from 'xml2js';
 import {
   CrawledNaverPlaceInformations,
@@ -14,6 +20,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { load } from 'cheerio';
 import { ConfigService } from '@nestjs/config';
+import { Places } from '@prisma/client';
 
 @Injectable()
 export class PlacesService {
@@ -44,35 +51,74 @@ export class PlacesService {
     };
   }
 
-  async getPlaceWithCrawl(place: PlaceDto) {
+  async getPlace(
+    place: PlaceDto,
+  ): Promise<PlaceInformation | PlacesCreateInput> {
     const { title, address } = place;
+
+    const extractAddress: ExtractAddress =
+      this.extractDistrictAndAddress(address);
+    place.address = extractAddress.detailAddress;
+
     const selectedPlace: PlaceInformation = await this.checkPlaceExists({
       title,
-      address,
+      address: extractAddress.detailAddress,
     });
-    if (selectedPlace) {
-      return selectedPlace;
+    if (!selectedPlace) {
+      const createdPlace: PlacesCreateInput = await this.createPlaceWithCrawl(
+        place,
+        extractAddress,
+      );
+
+      return createdPlace;
     }
 
-    const { naverPlaceId, thumUrl }: CrawledNaverPlaceInformations =
+    return selectedPlace;
+  }
+
+  private async createPlaceWithCrawl(
+    place,
+    extractAddress,
+  ): Promise<PlacesCreateInput> {
+    const { crawledNaverPlace, naverReviews } = await this.crawlPlace(
+      place.title,
+    );
+
+    const crawledPlace: PlacesCreateInput = {
+      ...place,
+      ...crawledNaverPlace,
+    };
+
+    const createdPlaceId: number = await this.createPlace(
+      crawledPlace,
+      extractAddress,
+    );
+
+    if (naverReviews) {
+      await this.createNaverReviews(createdPlaceId, naverReviews);
+    }
+
+    return crawledPlace;
+  }
+
+  private async crawlPlace(title: string): Promise<{
+    crawledNaverPlace: CrawledNaverPlace;
+    naverReviews: any[];
+  }> {
+    const { naverPlaceId, thumUrl: thum_url }: CrawledNaverPlaceInformations =
       await this.crawlPlaceDetails(title);
 
-    const { naverStars, naverReviewerCounts, naverReviews } =
+    const { naver_stars, naver_reviewer_counts, naverReviews } =
       await this.crawlNaverReviewsAndStars(naverPlaceId);
-    if (naverReviews) {
-      const crawledPlace: PlaceInformation = {
-        ...place,
-        naver_stars: naverStars,
-        naver_reviewer_counts: naverReviewerCounts,
-        naver_place_id: naverPlaceId,
-        thum_url: thumUrl,
-      };
 
-      const createdPlaceId: number = await this.createPlace(crawledPlace);
+    const crawledNaverPlace: CrawledNaverPlace = {
+      naver_place_id: naverPlaceId,
+      thum_url,
+      naver_stars,
+      naver_reviewer_counts,
+    };
 
-      await this.createNaverReviews(createdPlaceId, naverReviews);
-      return crawledPlace;
-    }
+    return { crawledNaverPlace, naverReviews };
   }
 
   private async crawlNaverReviewsAndStars(naverPlaceId: string) {
@@ -87,10 +133,10 @@ export class PlacesService {
 
       const $ = load(data);
 
-      const naverStars = $(
+      const naver_stars = $(
         '#app-root > div > div > div > div.place_section.OP4V8 > div.zD5Nm > div.dAsGb > span.PXMot.LXIwF > em',
       ).text();
-      const naverReviewerCounts = $(
+      const naver_reviewer_counts = $(
         '#app-root > div > div > div > div.place_section.OP4V8 > div.zD5Nm > div.dAsGb > span:nth-child(2) > a > em',
       ).text();
 
@@ -98,7 +144,7 @@ export class PlacesService {
         naverReviews.push({ description: $(this).text() });
       });
 
-      return { naverStars, naverReviewerCounts, naverReviews };
+      return { naver_stars, naver_reviewer_counts, naverReviews };
     } catch (error) {
       if (error.response.status === 404) {
         return;
@@ -122,11 +168,27 @@ export class PlacesService {
     return naverPlaceReviewUrl;
   }
 
-  private async createPlace(place: PlaceInformation): Promise<number> {
-    const createdPlace: PlaceInformation = await this.prisma.places.create({
-      data: place,
+  private async createPlace(
+    place: PlacesCreateInput,
+    extractAddress: ExtractAddress,
+  ): Promise<number> {
+    console.log(extractAddress);
+
+    const { id } = await this.prisma.regions.findFirst({
+      where: {
+        administrative_district: extractAddress.administrativeDistrict,
+        district: extractAddress.district,
+      },
+      select: {
+        id: true,
+      },
     });
-    if (!createdPlace.id) {
+    place.region_id = id;
+
+    const createdPlace: Places = await this.prisma.places.create({
+      data: { ...place },
+    });
+    if (!createdPlace) {
       throw new InternalServerErrorException(`데이터 생성에 실패했습니다.`);
     }
 
@@ -199,11 +261,12 @@ export class PlacesService {
     };
   }
 
-  private async checkPlaceExists(
-    place: PlaceSummary,
-  ): Promise<PlaceInformation> {
+  private async checkPlaceExists({
+    title,
+    address,
+  }: PlaceSummary): Promise<PlaceInformation> {
     const selectedPlace: PlaceInformation = await this.prisma.places.findFirst({
-      where: { ...place },
+      where: { title, address },
     });
 
     return selectedPlace;
@@ -225,5 +288,32 @@ export class PlacesService {
     const { id: naverPlaceId, thumUrl } = data.result.site.list[0];
 
     return { naverPlaceId, thumUrl };
+  }
+
+  private extractDistrictAndAddress(address): ExtractAddress {
+    const addressParts = address.split(' ');
+    let administrativeDistrict = null;
+    let district = null;
+
+    if (addressParts[0] === '세종특별자치시') {
+      administrativeDistrict = addressParts.shift();
+    } else if (
+      addressParts[0].endsWith('시') ||
+      addressParts[0].endsWith('도')
+    ) {
+      administrativeDistrict = addressParts.shift();
+    }
+
+    if (
+      addressParts.length >= 2 &&
+      (addressParts[0].endsWith('시') ||
+        addressParts[0].endsWith('군') ||
+        addressParts[0].endsWith('구'))
+    ) {
+      district = addressParts.shift();
+    }
+    const detailAddress = addressParts.join(' ');
+
+    return { administrativeDistrict, district, detailAddress };
   }
 }
