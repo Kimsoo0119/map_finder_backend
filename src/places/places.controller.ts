@@ -1,7 +1,10 @@
 import { Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { PlaceDto } from './dto/place.dto';
 import { PlacesService } from './places.service';
-import { PlaceInformation } from './interface/places.interface';
+import {
+  PlaceInformation,
+  PlacesCreateInput,
+} from './interface/places.interface';
 
 @Controller('places')
 export class PlacesController {
@@ -17,8 +20,11 @@ export class PlacesController {
   }
 
   @Get('/')
-  async getPlaceWithCrawl(@Query() places: PlaceDto) {
-    const place = await this.placeService.getPlaceWithCrawl(places);
+  async getPlace(
+    @Query() places: PlaceDto,
+  ): Promise<PlaceInformation | PlacesCreateInput> {
+    const place: PlaceInformation | PlacesCreateInput =
+      await this.placeService.getPlace(places);
 
     return place;
   }

@@ -50,8 +50,8 @@ model NaverReviews {
 
 model SimpleReviews {
   id          Int      @id @default(autoincrement())
-  place_id    Int
   user_id     Int
+  place_id    Int
   stars       Float
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
