@@ -4,6 +4,8 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
@@ -11,6 +13,7 @@ import { Token, User } from 'src/common/interface/common-interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
+import { Users } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -106,5 +109,35 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  async getUserByUserId(userId: number): Promise<Users> {
+    const user: Users = await this.prisma.users.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException(`존재하지 않는 유저입니다.`);
+    }
+
+    return user;
+  }
+
+  async validateRefreshToken(
+    userRefreshToken: string,
+    userId: number,
+  ): Promise<void> {
+    const cachedRefreshToken = await this.cacheManager.get(`${userId}`);
+    if (!cachedRefreshToken) {
+      throw new UnauthorizedException(
+        `로그인 정보가 만료되었습니다 다시 로그인해 주세요`,
+      );
+    }
+
+    if (userRefreshToken !== cachedRefreshToken) {
+      await this.cacheManager.del(`${userId}`);
+      throw new UnauthorizedException(
+        `잘못된 로그인 정보입니다. 다시 로그인해 주세요`,
+      );
+    }
   }
 }
