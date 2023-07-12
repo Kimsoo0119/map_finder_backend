@@ -42,10 +42,8 @@ export class RefreshTokenGuard extends AuthGuard('refreshToken') {
     if (!authorizedUser) {
       throw new NotFoundException(`유효하지않은 유저입니다.`);
     }
-    request.authorizedUser = authorizedUser;
 
     const cachedRefreshToken = await this.cacheManager.get(`${tokenUser.id}`);
-
     if (!cachedRefreshToken) {
       throw new UnauthorizedException(
         `로그인 정보가 만료되었습니다 다시 로그인해 주세요`,
@@ -59,6 +57,7 @@ export class RefreshTokenGuard extends AuthGuard('refreshToken') {
       );
     }
 
+    request.authorizedUser = authorizedUser;
     return true;
   }
 }

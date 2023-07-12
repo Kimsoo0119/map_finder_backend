@@ -28,7 +28,6 @@ export class AccessTokenGuard extends AuthGuard('accessToken') {
       .switchToHttp()
       .getRequest();
     const tokenUser: TokenPayload = request.user;
-    const { targetName, targetId } = request.body;
 
     const authorizedUser: Users = await this.prisma.users.findUnique({
       where: { id: tokenUser.id },
@@ -36,24 +35,8 @@ export class AccessTokenGuard extends AuthGuard('accessToken') {
     if (!authorizedUser) {
       throw new NotFoundException(`유효하지않은 유저입니다.`);
     }
+
     request.authorizedUser = authorizedUser;
-
-    if (targetName && targetId) {
-      try {
-        const { userId: targetUserId } = await this.prisma[
-          targetName
-        ].findUnique({
-          where: { id: targetId },
-          select: { userId: true },
-        });
-
-        if (targetUserId !== tokenUser.id) {
-          throw new ForbiddenException(`권한이 없습니다.`);
-        }
-      } catch (error) {
-        throw new NotFoundException(`대상이 존재하지 않습니다.`);
-      }
-    }
 
     return true;
   }
