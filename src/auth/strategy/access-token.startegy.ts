@@ -5,7 +5,6 @@ import { Users } from '@prisma/client';
 import { ExtractJwt } from 'passport-jwt';
 import { Strategy } from 'passport-jwt';
 import { TokenPayload } from 'src/common/interface/common-interface';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthService } from '../auth.service';
 
 @Injectable()
