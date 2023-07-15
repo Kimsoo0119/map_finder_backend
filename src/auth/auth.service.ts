@@ -53,7 +53,6 @@ export class AuthService {
     if (!user) {
       return { email };
     }
-
     const token = await this.generateJwtToken(user);
 
     return { token };
