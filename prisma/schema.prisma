@@ -3,6 +3,13 @@ enum LocationType {
   OUTSIDE
 }
 
+enum SignUpType {
+  LOCAL
+  KAKAO
+  GOOGLE
+  NAVER
+}
+
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native"]
@@ -16,8 +23,9 @@ datasource db {
 model Users {
   id               Int               @id @default(autoincrement())
   email            String            @unique
-  nickname         String
+  nickname         String            @unique
   created_at       DateTime          @default(now())
+  sign_up_type     SignUpType
   simple_reviews   SimpleReviews[]
   detailed_reviews DetailedReviews[]
   authentication   Authentication?

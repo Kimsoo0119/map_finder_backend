@@ -1,11 +1,10 @@
-import { Body, Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from 'src/common/interface/common-interface';
 import { Response } from 'express';
 import { RefreshTokenGuard } from 'src/common/guard/refresh-token.guard';
 import { GetAuthorizedUser } from 'src/common/decorator/get-user.decorator';
 import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
-import { userInfo } from 'os';
 
 @Controller('auth')
 export class AuthController {
@@ -47,6 +46,7 @@ export class AuthController {
 
     return { accessToken, msg: '토큰 재발급 완료' };
   }
+
   @Get('/test')
   @UseGuards(AccessTokenGuard)
   test(@GetAuthorizedUser() user) {

@@ -1,20 +1,10 @@
-import {
-  CACHE_MANAGER,
-  Inject,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { request } from 'http';
-import { ExtractJwt } from 'passport-jwt';
 import { Strategy } from 'passport-jwt';
 import { TokenPayload } from 'src/common/interface/common-interface';
 import { CookiesTokenExtractor } from '../extractor/cookie-token-extractor';
 import { Users } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Cache } from 'cache-manager';
 import { AuthService } from '../auth.service';
 
 @Injectable()
