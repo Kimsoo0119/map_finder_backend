@@ -13,7 +13,7 @@ import { Token, User } from 'src/common/interface/common-interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
-import { Users } from '@prisma/client';
+import { SignUpType, Users } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -48,11 +48,14 @@ export class AuthService {
   }
 
   async signInWithKakao(authorizationCode: string): Promise<User> {
-    const email: string = await this.getKakaoUserEmail(authorizationCode);
-    const user: User = await this.getUserByEmail(email);
+    const kakaoEmail: string = await this.getKakaoUserEmail(authorizationCode);
+    const signUpType = SignUpType.KAKAO;
+
+    const user: User = await this.getUserByEmail(kakaoEmail, signUpType);
     if (!user) {
-      return { email };
+      return { email: kakaoEmail };
     }
+
     const token = await this.generateJwtToken(user);
 
     return { token };
@@ -86,13 +89,22 @@ export class AuthService {
     }
   }
 
-  private async getUserByEmail(email: string): Promise<User> {
+  private async getUserByEmail(
+    email: string,
+    signUpType: SignUpType,
+  ): Promise<User | null> {
     const user: User = await this.prisma.users.findUnique({
       where: { email },
-      select: { id: true, nickname: true },
+      select: { id: true, nickname: true, sign_up_type: true },
     });
+    if (!user) {
+      return null;
+    }
+    if (user.sign_up_type !== signUpType) {
+      throw new BadRequestException(`다른 형식으로 가입된 이메일입니다.`);
+    }
 
-    return user;
+    return { id: user.id, nickname: user.nickname };
   }
 
   async generateJwtToken(userPayload: User): Promise<Token> {

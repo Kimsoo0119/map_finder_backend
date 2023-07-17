@@ -17,6 +17,7 @@ export class AuthController {
   ) {
     const { email: unregisteredUserEmail, token } =
       await this.authService.signInWithKakao(authorizationCode);
+
     if (!unregisteredUserEmail) {
       response.cookie('refreshToken', token.refreshToken, {
         httpOnly: true,
@@ -25,7 +26,7 @@ export class AuthController {
       return { accessToken: token.accessToken };
     }
 
-    return { unregisteredUserEmail };
+    return { unregisteredUserEmail, signUpType: 'KAKAO' };
   }
 
   @Get('/token')

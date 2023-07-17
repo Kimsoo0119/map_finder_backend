@@ -1,3 +1,4 @@
+import { SignUpType } from '@prisma/client';
 import { Request } from 'express';
 
 export interface CrawledNaverReview {
@@ -20,6 +21,7 @@ export interface User {
   nickname?: string;
   token?: Token;
   email?: string;
+  sign_up_type?: SignUpType;
 }
 
 export interface Token {
