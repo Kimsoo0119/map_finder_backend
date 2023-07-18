@@ -1,6 +1,8 @@
 import { LocationType } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsDate,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -8,7 +10,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export class UpdateDetailedReviewDto {
+export class UpdateToiletReviewDto {
   @IsNumber()
   @IsNotEmpty()
   placeId: number;
@@ -21,6 +23,10 @@ export class UpdateDetailedReviewDto {
   @IsNotEmpty()
   userId: number;
 
+  @IsNumber()
+  @IsOptional()
+  stars: number;
+
   @IsBoolean()
   @IsOptional()
   isUnisex: boolean;
@@ -32,4 +38,9 @@ export class UpdateDetailedReviewDto {
   @IsString()
   @IsOptional()
   description: string;
+
+  @IsDate()
+  @Type(() => Date)
+  @IsOptional()
+  visitedAt: Date;
 }

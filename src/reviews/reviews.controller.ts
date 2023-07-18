@@ -10,102 +10,59 @@ import {
   Query,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
-import { GetReviewsDto } from './dto/get-reviews.dto';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { UpdateSimpleReviewDto } from './dto/update-simple-review.dto';
-import { DeleteReviewDto } from './dto/delete-reveiw-dto';
-import { DetailedReview, SimpleReview } from './interface/reviews.interface';
-import { CreateDetailedReviewDto } from './dto/create-detailed-review.dto';
-import { UpdateDetailedReviewDto } from './dto/update-detailed-review.dto';
+import { GetToiletReviewsDto } from './dto/get-toilet-reviews.dto';
+import { DeleteToiletReviewDto } from './dto/delete-toilet-reveiw-dto';
+import { ToiletReview } from './interface/reviews.interface';
+import { CreateToiletReviewDto } from './dto/create-toilet-review.dto';
+import { UpdateToiletReviewDto } from './dto/update-toilet-review.dto';
 
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
-  @Get('/simple')
-  async getSimpleReviews(
-    @Query() { placeId }: GetReviewsDto,
-  ): Promise<SimpleReview[]> {
-    const reviews: SimpleReview[] = await this.reviewsService.getSimpleReviews(
-      placeId,
-    );
 
-    return reviews;
+  @Get('/toilet')
+  async getToiletReviews(
+    @Query() { placeId }: GetToiletReviewsDto,
+  ): Promise<ToiletReview[]> {
+    const ToiletReviews: ToiletReview[] =
+      await this.reviewsService.getToiletReviews(placeId);
+
+    return ToiletReviews;
   }
 
-  @Get('/simple/:userId')
-  async getSimpleReviewsByUserId(
+  @Get('/toilet/:userId')
+  async getToiletReviewsByUserId(
     @Param('userId', ParseIntPipe) userId: number,
-  ): Promise<SimpleReview[]> {
-    const simpleReviews: SimpleReview[] =
-      await this.reviewsService.getSimpleReviewsByUserId(userId);
+  ): Promise<ToiletReview[]> {
+    const ToiletReviews: ToiletReview[] =
+      await this.reviewsService.getToiletReviewsByUserId(userId);
 
-    return simpleReviews;
+    return ToiletReviews;
   }
 
-  @Post('/simple')
-  async createSimpleReview(@Body() createReviewDto: CreateReviewDto) {
-    await this.reviewsService.createSimpleReview(createReviewDto);
-
-    return { message: '리뷰 작성 성공' };
-  }
-
-  @Patch('/simple')
-  async updateSimpleReview(
-    @Body() updateSimpleReviewDto: UpdateSimpleReviewDto,
+  @Post('/toilet')
+  async createToiletReview(
+    @Body() createToiletReviewDto: CreateToiletReviewDto,
   ) {
-    await this.reviewsService.updateSimpleReview(updateSimpleReviewDto);
-
-    return { message: '리뷰 수정 성공' };
-  }
-
-  @Delete('/simple')
-  async deleteSimpleReview(@Body() deleteSimpleReviewDto: DeleteReviewDto) {
-    await this.reviewsService.deleteSimpleReview(deleteSimpleReviewDto);
-
-    return { message: '리뷰 삭제 성공' };
-  }
-
-  @Get('/detail')
-  async getDetailedReviews(
-    @Query() { placeId }: GetReviewsDto,
-  ): Promise<DetailedReview[]> {
-    const detailedReviews: DetailedReview[] =
-      await this.reviewsService.getDetailedReviews(placeId);
-
-    return detailedReviews;
-  }
-
-  @Get('/detail/:userId')
-  async getDetailedReviewsByUserId(
-    @Param('userId', ParseIntPipe) userId: number,
-  ): Promise<DetailedReview[]> {
-    const detailedReviews: DetailedReview[] =
-      await this.reviewsService.getDetailedReviewsByUserId(userId);
-
-    return detailedReviews;
-  }
-
-  @Post('/detail')
-  async createDetailedReview(
-    @Body() createDetailedReviewDto: CreateDetailedReviewDto,
-  ) {
-    await this.reviewsService.createDetailedReview(createDetailedReviewDto);
+    await this.reviewsService.createToiletReview(createToiletReviewDto);
 
     return { message: '리뷰 작성 완료' };
   }
 
-  @Patch('/detail')
-  async updateDetailedReview(
-    @Body() updateDetailedReviewDto: UpdateDetailedReviewDto,
+  @Patch('/toilet')
+  async updateToiletReview(
+    @Body() updateToiletReviewDto: UpdateToiletReviewDto,
   ) {
-    await this.reviewsService.updateDetailedReview(updateDetailedReviewDto);
+    await this.reviewsService.updateToiletReview(updateToiletReviewDto);
 
     return { message: '리뷰 수정 완료' };
   }
 
-  @Delete('/detail')
-  async deleteDetailedReview(@Body() deleteDetailedReviewDto: DeleteReviewDto) {
-    await this.reviewsService.deleteDetailedReview(deleteDetailedReviewDto);
+  @Delete('/toilet')
+  async deleteToiletReview(
+    @Body() deleteToiletReviewDto: DeleteToiletReviewDto,
+  ) {
+    await this.reviewsService.deleteToiletReview(deleteToiletReviewDto);
 
     return { message: '리뷰 삭제 완료' };
   }

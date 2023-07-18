@@ -50,7 +50,5 @@ export class AuthController {
 
   @Get('/test')
   @UseGuards(AccessTokenGuard)
-  test(@GetAuthorizedUser() user) {
-    console.log(user);
-  }
+  test(@GetAuthorizedUser() user) {}
 }
