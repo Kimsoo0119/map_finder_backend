@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsNotEmpty, IsNumber } from 'class-validator';
 
-export class GetReviewsDto {
+export class GetToiletReviewsDto {
   @IsNumber()
   @Type(() => Number)
   @IsNotEmpty()

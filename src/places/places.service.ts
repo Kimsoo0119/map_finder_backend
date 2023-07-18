@@ -172,8 +172,6 @@ export class PlacesService {
     place: PlacesCreateInput,
     extractAddress: ExtractAddress,
   ): Promise<number> {
-    console.log(extractAddress);
-
     const { id } = await this.prisma.regions.findFirst({
       where: {
         administrative_district: extractAddress.administrativeDistrict,

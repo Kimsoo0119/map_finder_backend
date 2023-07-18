@@ -1,21 +1,14 @@
 import { LocationType } from '@prisma/client';
 
-export interface DetailedReview {
+export interface ToiletReview {
   id: number;
-  description: string;
-  user: {
-    nickname: string;
-  };
+  stars: number;
   created_at: Date;
   updated_at: Date;
   is_unisex: boolean;
   location: LocationType;
-}
-
-export interface SimpleReview {
-  id: number;
   description: string;
-  stars: number;
+  visited_at: Date;
   user: {
     nickname: string;
   };
