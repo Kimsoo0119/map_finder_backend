@@ -14,7 +14,7 @@ import { UpdateToiletReviewDto } from './dto/update-toilet-review.dto';
 @Injectable()
 export class ReviewsService {
   constructor(private readonly prisma: PrismaService) {}
-  async getToiletReviews(placeId: number) {
+  async getToiletReviewsByPlaceId(placeId: number) {
     const toiletReviews: ToiletReview[] =
       await this.prisma.toiletReviews.findMany({
         where: { place_id: placeId },
@@ -59,23 +59,28 @@ export class ReviewsService {
   }
 
   async getToiletReviewsByUserId(userId: number): Promise<ToiletReview[]> {
-    const toiletReviews: ToiletReview[] =
-      await this.prisma.toiletReviews.findMany({
-        where: { user_id: userId },
-        select: {
-          id: true,
-          stars: true,
-          created_at: true,
-          updated_at: true,
-          is_unisex: true,
-          location: true,
-          description: true,
-          visited_at: true,
-          user: { select: { nickname: true } },
-        },
-      });
+    try {
+      const toiletReviews: ToiletReview[] =
+        await this.prisma.toiletReviews.findMany({
+          where: { user_id: userId },
+          select: {
+            id: true,
+            place_id: true,
+            stars: true,
+            is_unisex: true,
+            location: true,
+            visited_at: true,
+            description: true,
+            created_at: true,
+            updated_at: true,
+            user: { select: { nickname: true } },
+          },
+        });
 
-    return toiletReviews;
+      return toiletReviews;
+    } catch (error) {
+      throw new InternalServerErrorException(`알 수 없는 서버 에러입니다.`);
+    }
   }
 
   async createToiletReview(
@@ -86,15 +91,25 @@ export class ReviewsService {
 
     await this.checkUserExists(userId);
     await this.checkPlaceExists(placeId);
-    await this.prisma.toiletReviews.create({
-      data: {
-        user_id: userId,
-        place_id: placeId,
-        is_unisex: isUnisex,
-        visited_at: visitedAt,
-        ...rest,
-      },
+    await this.createToiletReviewWithPrisma({
+      user_id: userId,
+      place_id: placeId,
+      is_unisex: isUnisex,
+      visited_at: visitedAt,
+      ...rest,
     });
+  }
+
+  private async createToiletReviewWithPrisma(data): Promise<void> {
+    try {
+      await this.prisma.toiletReviews.create({ data });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new BadRequestException(`중복 리뷰작성 불가`);
+      }
+
+      throw new InternalServerErrorException(`Review 데이터 생성 오류입니다.`);
+    }
   }
 
   async updateToiletReview(
@@ -114,10 +129,14 @@ export class ReviewsService {
       throw new BadRequestException(`리뷰 작성자만 수정 가능합니다.`);
     }
 
-    await this.prisma.toiletReviews.update({
-      where: { id: reviewId },
-      data: { is_unisex: isUnisex, visited_at: visitedAt, ...rest },
-    });
+    try {
+      await this.prisma.toiletReviews.update({
+        where: { id: reviewId },
+        data: { is_unisex: isUnisex, visited_at: visitedAt, ...rest },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(`리뷰 업데이트 오류입니다.`);
+    }
   }
 
   private async checkToiletReviewAuthorship({
@@ -125,34 +144,21 @@ export class ReviewsService {
     placeId,
     userId,
   }): Promise<boolean> {
-    const toiletReview: ToiletReviews =
-      await this.prisma.toiletReviews.findFirst({
-        where: { id: reviewId, place_id: placeId },
-      });
+    try {
+      const toiletReview: ToiletReviews =
+        await this.prisma.toiletReviews.findFirst({
+          where: { id: reviewId, place_id: placeId },
+        });
 
-    if (!toiletReview) {
-      throw new NotFoundException(`해당 리뷰가 존재하지 않습니다.`);
+      if (!toiletReview) {
+        throw new NotFoundException(`해당 리뷰가 존재하지 않습니다.`);
+      }
+
+      return toiletReview.user_id === userId ? true : false;
+    } catch (error) {
+      throw new InternalServerErrorException(`알 수 없는 서버 에러입니다.`);
     }
-
-    return toiletReview.user_id === userId ? true : false;
   }
-
-  // private async checkSimpleReviewAuthorship({
-  //   reviewId,
-  //   placeId,
-  //   userId,
-  // }): Promise<boolean> {
-  //   const simpleReview: SimpleReviews =
-  //     await this.prisma.simpleReviews.findFirst({
-  //       where: { id: reviewId, place_id: placeId },
-  //     });
-
-  //   if (!simpleReview) {
-  //     throw new NotFoundException(`해당 리뷰가 존재하지 않습니다.`);
-  //   }
-
-  //   return simpleReview.user_id === userId ? true : false;
-  // }
 
   async deleteToiletReview({
     userId,
@@ -170,6 +176,10 @@ export class ReviewsService {
       throw new BadRequestException(`리뷰 작성자만 삭제 가능합니다.`);
     }
 
-    await this.prisma.toiletReviews.delete({ where: { id: reviewId } });
+    try {
+      await this.prisma.toiletReviews.delete({ where: { id: reviewId } });
+    } catch (error) {
+      throw new InternalServerErrorException(`데이터 삭제 오류입니다.`);
+    }
   }
 }
