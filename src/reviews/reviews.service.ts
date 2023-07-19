@@ -10,16 +10,18 @@ import { ToiletReview } from './interface/reviews.interface';
 import { Places, ToiletReviews, Users } from '@prisma/client';
 import { CreateToiletReviewDto } from './dto/create-toilet-review.dto';
 import { UpdateToiletReviewDto } from './dto/update-toilet-review.dto';
+import { number } from 'joi';
 
 @Injectable()
 export class ReviewsService {
   constructor(private readonly prisma: PrismaService) {}
-  async getToiletReviewsByPlaceId(placeId: number) {
+  async getToiletReviewsByPlaceId(placeId: number): Promise<ToiletReview[]> {
     const toiletReviews: ToiletReview[] =
       await this.prisma.toiletReviews.findMany({
         where: { place_id: placeId },
         select: {
           id: true,
+          place_id: true,
           stars: true,
           created_at: true,
           updated_at: true,
@@ -27,7 +29,7 @@ export class ReviewsService {
           location: true,
           description: true,
           visited_at: true,
-          user: { select: { nickname: true } },
+          user: { select: { id: true, nickname: true } },
         },
       });
 
@@ -73,7 +75,7 @@ export class ReviewsService {
             description: true,
             created_at: true,
             updated_at: true,
-            user: { select: { nickname: true } },
+            user: { select: { id: true, nickname: true } },
           },
         });
 

@@ -24,7 +24,7 @@ import { Users } from '@prisma/client';
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
-  @Get('/toilet/place')
+  @Get('/place/toilet')
   async getToiletReviewsByPlaceId(
     @Query() { placeId }: GetToiletReviewsDto,
   ): Promise<ToiletReview[]> {
@@ -34,7 +34,7 @@ export class ReviewsController {
     return ToiletReviews;
   }
 
-  @Get('/toilet/user')
+  @Get('/user/toilet')
   @UseGuards(AccessTokenGuard)
   async getToiletReviewsByUserId(
     @GetAuthorizedUser() user: Users,
