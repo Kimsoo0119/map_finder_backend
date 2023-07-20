@@ -60,9 +60,8 @@ export class PlacesService {
       this.extractDistrictAndAddress(address);
     place.address = extractAddress.detailAddress;
 
-    const selectedPlace: PlaceInformation = await this.checkPlaceExists({
-      title,
-      address: extractAddress.detailAddress,
+    const selectedPlace: PlaceInformation = await this.prisma.places.findFirst({
+      where: { title, address: extractAddress.detailAddress },
     });
     if (!selectedPlace) {
       const createdPlace: PlacesCreateInput = await this.createPlaceWithCrawl(
@@ -172,7 +171,7 @@ export class PlacesService {
     place: PlacesCreateInput,
     extractAddress: ExtractAddress,
   ): Promise<number> {
-    const { id } = await this.prisma.regions.findFirst({
+    const selectedRegion = await this.prisma.regions.findFirst({
       where: {
         administrative_district: extractAddress.administrativeDistrict,
         district: extractAddress.district,
@@ -181,14 +180,11 @@ export class PlacesService {
         id: true,
       },
     });
-    place.region_id = id;
+    place.region_id = selectedRegion.id;
 
     const createdPlace: Places = await this.prisma.places.create({
       data: { ...place },
     });
-    if (!createdPlace) {
-      throw new InternalServerErrorException(`데이터 생성에 실패했습니다.`);
-    }
 
     return createdPlace.id;
   }
@@ -257,17 +253,6 @@ export class PlacesService {
       mapX: place.mapx,
       mapY: place.mapy,
     };
-  }
-
-  private async checkPlaceExists({
-    title,
-    address,
-  }: PlaceSummary): Promise<PlaceInformation> {
-    const selectedPlace: PlaceInformation = await this.prisma.places.findFirst({
-      where: { title, address },
-    });
-
-    return selectedPlace;
   }
 
   private async crawlPlaceDetails(
