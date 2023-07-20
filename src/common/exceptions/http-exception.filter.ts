@@ -17,6 +17,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
+
     const log = {
       statusCode: status,
       timestamp: new Date().toISOString(),
@@ -31,7 +32,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message: exception.message,
+      exceptionResponse,
     });
   }
 }
