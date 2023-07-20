@@ -10,6 +10,13 @@ enum SignUpType {
   NAVER
 }
 
+enum Emoji {
+  LIKE
+  HELPFUL
+  SMILE
+  SAD
+}
+
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native"]
@@ -21,13 +28,14 @@ datasource db {
 }
 
 model Users {
-  id             Int             @id @default(autoincrement())
-  email          String          @unique
-  nickname       String          @unique
-  created_at     DateTime        @default(now())
-  sign_up_type   SignUpType
-  authentication Authentication?
-  toilet_reviews ToiletReviews[]
+  id                  Int                 @id @default(autoincrement())
+  email               String              @unique
+  nickname            String              @unique
+  created_at          DateTime            @default(now())
+  sign_up_type        SignUpType
+  authentication      Authentication?
+  toilet_reviews      ToiletReviews[]
+  toilet_review_emoji ToiletReviewEmoji[]
 }
 
 model Places {
@@ -70,18 +78,34 @@ model Regions {
 }
 
 model ToiletReviews {
-  id          Int           @id @default(autoincrement())
-  place_id    Int
-  user_id     Int
-  stars       Float
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @updatedAt
-  is_unisex   Boolean?
-  description String?
-  visited_at  DateTime?
-  location    LocationType?
-  user        Users         @relation(fields: [user_id], references: [id])
-  place       Places        @relation(fields: [place_id], references: [id])
+  id                  Int                 @id @default(autoincrement())
+  place_id            Int
+  user_id             Int
+  stars               Float
+  created_at          DateTime            @default(now())
+  updated_at          DateTime            @updatedAt
+  is_unisex           Boolean?
+  description         String?
+  visited_at          DateTime?
+  location            LocationType?
+  like_count          Int?
+  helpful_count        Int?
+  smile_count         Int?
+  sad_count           Int?
+  user                Users               @relation(fields: [user_id], references: [id])
+  place               Places              @relation(fields: [place_id], references: [id])
+  toilet_review_emoji ToiletReviewEmoji[]
 
-  @@unique([place_id,user_id])
+  @@unique([place_id, user_id])
+}
+
+model ToiletReviewEmoji {
+  id               Int           @id @default(autoincrement())
+  toilet_review_id Int
+  user_id          Int
+  emoji            Emoji
+  toilet_reviews   ToiletReviews @relation(fields: [toilet_review_id], references: [id])
+  user             Users         @relation(fields: [user_id], references: [id])
+
+  @@unique([toilet_review_id, user_id])
 }
