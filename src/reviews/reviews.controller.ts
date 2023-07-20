@@ -18,7 +18,8 @@ import { CreateToiletReviewDto } from './dto/create-toilet-review.dto';
 import { UpdateToiletReviewDto } from './dto/update-toilet-review.dto';
 import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
 import { GetAuthorizedUser } from 'src/common/decorator/get-user.decorator';
-import { Users } from '@prisma/client';
+import { Users, Emoji } from '@prisma/client';
+import { UpdateEmojiDto } from './dto/emoji.dto';
 
 @Controller('reviews')
 export class ReviewsController {
@@ -51,7 +52,7 @@ export class ReviewsController {
   ) {
     await this.reviewsService.createToiletReview(createToiletReviewDto);
 
-    return { message: '리뷰 작성 완료' };
+    return { status: 'success', message: '리뷰 작성 완료' };
   }
 
   @Patch('/toilet')
@@ -60,7 +61,7 @@ export class ReviewsController {
   ) {
     await this.reviewsService.updateToiletReview(updateToiletReviewDto);
 
-    return { message: '리뷰 수정 완료' };
+    return { status: 'success', message: '리뷰 수정 완료' };
   }
 
   @Delete('/toilet')
@@ -69,6 +70,21 @@ export class ReviewsController {
   ) {
     await this.reviewsService.deleteToiletReview(deleteToiletReviewDto);
 
-    return { message: '리뷰 삭제 완료' };
+    return { status: 'success', message: '리뷰 삭제 완료' };
+  }
+
+  @Post('/toilet/:toiletReviewId')
+  @UseGuards(AccessTokenGuard)
+  async createToiletReviewEmoji(
+    @GetAuthorizedUser() user: Users,
+    @Param('toiletReviewId', ParseIntPipe) toiletReviewId: number,
+    @Query() { emoji }: UpdateEmojiDto,
+  ) {
+    await this.reviewsService.createToiletReviewEmoji(
+      user.id,
+      toiletReviewId,
+      emoji,
+    );
+    return { status: 'success' };
   }
 }

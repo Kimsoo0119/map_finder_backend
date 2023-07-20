@@ -67,7 +67,7 @@ model Authentication {
   user_id      Int    @unique
   password     String
   failed_count Int    @default(0)
-  user         Users  @relation(fields: [user_id], references: [id])
+  user         Users  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model Regions {
@@ -88,11 +88,11 @@ model ToiletReviews {
   description         String?
   visited_at          DateTime?
   location            LocationType?
-  like_count          Int?
-  helpful_count        Int?
-  smile_count         Int?
-  sad_count           Int?
-  user                Users               @relation(fields: [user_id], references: [id])
+  like_count          Int                 @default(0)
+  helpful_count       Int                 @default(0)
+  smile_count         Int                 @default(0)
+  sad_count           Int                 @default(0)
+  user                Users               @relation(fields: [user_id], references: [id], onDelete: Cascade)
   place               Places              @relation(fields: [place_id], references: [id])
   toilet_review_emoji ToiletReviewEmoji[]
 
@@ -104,8 +104,8 @@ model ToiletReviewEmoji {
   toilet_review_id Int
   user_id          Int
   emoji            Emoji
-  toilet_reviews   ToiletReviews @relation(fields: [toilet_review_id], references: [id])
-  user             Users         @relation(fields: [user_id], references: [id])
+  toilet_reviews   ToiletReviews @relation(fields: [toilet_review_id], references: [id], onDelete: Cascade)
+  user             Users         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([toilet_review_id, user_id])
 }
