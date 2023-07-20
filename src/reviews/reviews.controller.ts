@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { GetToiletReviewsDto } from './dto/get-toilet-reviews.dto';
@@ -15,27 +16,31 @@ import { DeleteToiletReviewDto } from './dto/delete-toilet-reveiw-dto';
 import { ToiletReview } from './interface/reviews.interface';
 import { CreateToiletReviewDto } from './dto/create-toilet-review.dto';
 import { UpdateToiletReviewDto } from './dto/update-toilet-review.dto';
+import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
+import { GetAuthorizedUser } from 'src/common/decorator/get-user.decorator';
+import { Users } from '@prisma/client';
 
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
-  @Get('/toilet')
-  async getToiletReviews(
+  @Get('/place/toilet')
+  async getToiletReviewsByPlaceId(
     @Query() { placeId }: GetToiletReviewsDto,
   ): Promise<ToiletReview[]> {
     const ToiletReviews: ToiletReview[] =
-      await this.reviewsService.getToiletReviews(placeId);
+      await this.reviewsService.getToiletReviewsByPlaceId(placeId);
 
     return ToiletReviews;
   }
 
-  @Get('/toilet/:userId')
+  @Get('/user/toilet')
+  @UseGuards(AccessTokenGuard)
   async getToiletReviewsByUserId(
-    @Param('userId', ParseIntPipe) userId: number,
+    @GetAuthorizedUser() user: Users,
   ): Promise<ToiletReview[]> {
     const ToiletReviews: ToiletReview[] =
-      await this.reviewsService.getToiletReviewsByUserId(userId);
+      await this.reviewsService.getToiletReviewsByUserId(user.id);
 
     return ToiletReviews;
   }
