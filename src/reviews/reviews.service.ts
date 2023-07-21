@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { DeleteToiletReviewDto } from './dto/delete-toilet-reveiw-dto';
-import { ToiletReview } from './interface/reviews.interface';
+import { EmojiLog, ToiletReview } from './interface/reviews.interface';
 import { Emoji, Places, ToiletReviews, Users } from '@prisma/client';
 import { CreateToiletReviewDto } from './dto/create-toilet-review.dto';
 import { UpdateToiletReviewDto } from './dto/update-toilet-review.dto';
@@ -191,5 +191,18 @@ export class ReviewsService {
       where: { id: toiletReviewId },
       data: { [fieldToUpdate]: { increment: incrementValue } },
     });
+  }
+
+  async getUsersToiletReviewEmojiLog(user: Users): Promise<EmojiLog[]> {
+    const emojiLog: EmojiLog[] = await this.prisma.toiletReviewEmoji.findMany({
+      where: { user_id: user.id },
+      select: {
+        id: true,
+        emoji: true,
+        toilet_reviews: true,
+      },
+    });
+
+    return emojiLog;
   }
 }

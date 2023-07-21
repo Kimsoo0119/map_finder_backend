@@ -1,4 +1,4 @@
-import { LocationType } from '@prisma/client';
+import { Emoji, LocationType, ToiletReviews } from '@prisma/client';
 
 export interface ToiletReview {
   id: number;
@@ -14,4 +14,10 @@ export interface ToiletReview {
     id: number;
     nickname: string;
   };
+}
+
+export interface EmojiLog {
+  id: number;
+  emoji: Emoji;
+  toilet_reviews: ToiletReviews;
 }
