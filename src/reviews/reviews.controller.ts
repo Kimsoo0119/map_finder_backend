@@ -13,7 +13,7 @@ import {
 import { ReviewsService } from './reviews.service';
 import { GetToiletReviewsDto } from './dto/get-toilet-reviews.dto';
 import { DeleteToiletReviewDto } from './dto/delete-toilet-reveiw-dto';
-import { ToiletReview } from './interface/reviews.interface';
+import { EmojiLog, ToiletReview } from './interface/reviews.interface';
 import { CreateToiletReviewDto } from './dto/create-toilet-review.dto';
 import { UpdateToiletReviewDto } from './dto/update-toilet-review.dto';
 import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
@@ -26,7 +26,7 @@ export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Get('/place/toilet')
-  async getToiletReviewsByPlaceId(
+  async getPlaceToiletReviews(
     @Query() { placeId }: GetToiletReviewsDto,
   ): Promise<ToiletReview[]> {
     const ToiletReviews: ToiletReview[] =
@@ -37,7 +37,7 @@ export class ReviewsController {
 
   @Get('/user/toilet')
   @UseGuards(AccessTokenGuard)
-  async getToiletReviewsByUserId(
+  async getUsersToiletReviews(
     @GetAuthorizedUser() user: Users,
   ): Promise<ToiletReview[]> {
     const ToiletReviews: ToiletReview[] =
@@ -71,6 +71,15 @@ export class ReviewsController {
     await this.reviewsService.deleteToiletReview(deleteToiletReviewDto);
 
     return { status: 'success', message: '리뷰 삭제 완료' };
+  }
+
+  @Get('/user/toilet/emoji')
+  @UseGuards(AccessTokenGuard)
+  async getUsersToiletReviewsEmoji(@GetAuthorizedUser() user: Users) {
+    const emojiLog: EmojiLog[] =
+      await this.reviewsService.getUsersToiletReviewEmojiLog(user);
+
+    return { emojiLog };
   }
 
   @Post('/toilet/:toiletReviewId')
