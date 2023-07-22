@@ -218,21 +218,22 @@ export class ReviewsService {
     toiletReviewEmojiId: number,
     emoji: Emoji,
   ) {
-    const emojiFieldToDecrease = await this.getEmojiFieldToDecrease(
+    const writtenToiletEmoji = await this.getWrittenToiletEmoji(
       userId,
       toiletReviewEmojiId,
-      emoji,
     );
-    if (!emojiFieldToDecrease) {
+    if (writtenToiletEmoji === emoji) {
       return;
     }
+
+    const emojiFieldToDecrease = `${writtenToiletEmoji.toLocaleLowerCase()}_count`;
+    const emojiFieldToIncrease = `${emoji.toLocaleLowerCase()}_count`;
 
     await this.prisma.$transaction(async (prisma) => {
       await prisma.toiletReviewEmoji.update({
         where: { id: toiletReviewEmojiId },
         data: { emoji },
       });
-      const emojiFieldToIncrease = `${emoji.toLocaleLowerCase()}_count`;
 
       await prisma.toiletReviews.update({
         where: { id: toiletReviewId },
@@ -244,7 +245,7 @@ export class ReviewsService {
     });
   }
 
-  private async getEmojiFieldToDecrease(userId, toiletReviewEmojiId, emoji) {
+  private async getWrittenToiletEmoji(userId, toiletReviewEmojiId) {
     const emojiLog = await this.prisma.toiletReviewEmoji.findUnique({
       where: {
         id: toiletReviewEmojiId,
@@ -255,12 +256,42 @@ export class ReviewsService {
       throw new NotFoundException(`이모지 내역이 존재하지 않습니다.`);
     }
     if (emojiLog.user_id !== userId) {
-      throw new BadRequestException(`작성자만 수정 가능합니다.`);
-    }
-    if (emojiLog.emoji === emoji) {
-      return;
+      throw new BadRequestException(`작성자만 조회 가능합니다.`);
     }
 
-    return `${emojiLog.emoji.toLocaleLowerCase()}_count`;
+    return emojiLog.emoji;
+  }
+
+  async deleteToiletReviewEmoji(
+    userId: number,
+    toiletReviewId: number,
+    toiletReviewEmojiId: number,
+  ) {
+    const toiletReview: ToiletReviews =
+      await this.prisma.toiletReviews.findUnique({
+        where: { id: toiletReviewId },
+      });
+
+    if (!toiletReview) {
+      throw new NotFoundException(`리뷰가 존재하지 않습니다.`);
+    }
+
+    const emojiFieldToDecrease = await this.getWrittenToiletEmoji(
+      userId,
+      toiletReviewEmojiId,
+    );
+
+    await this.prisma.$transaction(async (prisma) => {
+      await prisma.toiletReviewEmoji.delete({
+        where: { id: toiletReviewEmojiId },
+      });
+
+      await this.updateToiletReviewEmojiCount(
+        toiletReviewId,
+        emojiFieldToDecrease,
+        EmojiCountUpdateType.DECREASE,
+        prisma,
+      );
+    });
   }
 }
