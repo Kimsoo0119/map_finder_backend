@@ -10,6 +10,10 @@ export interface ToiletReview {
   location: LocationType;
   description: string;
   visited_at: Date;
+  like_count: number;
+  sad_count: number;
+  smile_count: number;
+  helpful_count: number;
   user: {
     id: number;
     nickname: string;

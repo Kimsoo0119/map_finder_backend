@@ -44,6 +44,10 @@ export class ReviewsService {
           location: true,
           description: true,
           visited_at: true,
+          like_count: true,
+          sad_count: true,
+          smile_count: true,
+          helpful_count: true,
           user: { select: { id: true, nickname: true } },
         },
       });
@@ -65,6 +69,10 @@ export class ReviewsService {
           description: true,
           created_at: true,
           updated_at: true,
+          like_count: true,
+          sad_count: true,
+          smile_count: true,
+          helpful_count: true,
           user: { select: { id: true, nickname: true } },
         },
       });
