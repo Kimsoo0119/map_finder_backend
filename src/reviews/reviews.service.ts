@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { DeleteToiletReviewDto } from './dto/delete-toilet-reveiw-dto';
 import { EmojiLog, ToiletReview } from './interface/reviews.interface';
 import { Emoji, Places, ToiletReviews, Users } from '@prisma/client';
 import { CreateToiletReviewDto } from './dto/create-toilet-review.dto';
@@ -74,10 +73,11 @@ export class ReviewsService {
   }
 
   async createToiletReview(
+    userId: number,
+    placeId: number,
     createToiletReviewDto: CreateToiletReviewDto,
   ): Promise<void> {
-    const { userId, placeId, isUnisex, visitedAt, ...rest } =
-      createToiletReviewDto;
+    const { isUnisex, visitedAt, ...rest } = createToiletReviewDto;
 
     const placeExists = await this.prisma.places.findUnique({
       where: {
@@ -100,13 +100,15 @@ export class ReviewsService {
   }
 
   async updateToiletReview(
+    userId: number,
+    placeId: number,
+    toiletReviewId: number,
     updateToiletReviewDto: UpdateToiletReviewDto,
   ): Promise<void> {
-    const { userId, placeId, reviewId, isUnisex, visitedAt, ...rest } =
-      updateToiletReviewDto;
+    const { isUnisex, visitedAt, ...rest } = updateToiletReviewDto;
 
     const isAuthorship: boolean = await this.checkToiletReviewAuthorship({
-      reviewId,
+      toiletReviewId,
       placeId,
       userId,
     });
@@ -115,19 +117,19 @@ export class ReviewsService {
     }
 
     await this.prisma.toiletReviews.update({
-      where: { id: reviewId },
+      where: { id: toiletReviewId },
       data: { is_unisex: isUnisex, visited_at: visitedAt, ...rest },
     });
   }
 
   private async checkToiletReviewAuthorship({
-    reviewId,
-    placeId,
     userId,
+    placeId,
+    toiletReviewId,
   }): Promise<boolean> {
     const toiletReview: ToiletReviews =
       await this.prisma.toiletReviews.findFirst({
-        where: { id: reviewId, place_id: placeId },
+        where: { id: toiletReviewId, place_id: placeId },
       });
 
     if (!toiletReview) {
@@ -137,21 +139,21 @@ export class ReviewsService {
     return toiletReview.user_id === userId ? true : false;
   }
 
-  async deleteToiletReview({
-    userId,
-    reviewId,
-    placeId,
-  }: DeleteToiletReviewDto): Promise<void> {
+  async deleteToiletReview(
+    userId: number,
+    placeId: number,
+    toiletReviewId: number,
+  ): Promise<void> {
     const isAuthorship: boolean = await this.checkToiletReviewAuthorship({
       userId,
-      reviewId,
       placeId,
+      toiletReviewId,
     });
     if (!isAuthorship) {
       throw new BadRequestException(`리뷰 작성자만 삭제 가능합니다.`);
     }
 
-    await this.prisma.toiletReviews.delete({ where: { id: reviewId } });
+    await this.prisma.toiletReviews.delete({ where: { id: toiletReviewId } });
   }
 
   async createToiletReviewEmoji(

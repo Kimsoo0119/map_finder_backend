@@ -12,16 +12,6 @@ import {
 
 export class CreateToiletReviewDto {
   @IsNumber()
-  @Type(() => Number)
-  @IsNotEmpty()
-  placeId: number;
-
-  @IsNumber()
-  @Type(() => Number)
-  @IsNotEmpty()
-  userId: number;
-
-  @IsNumber()
   @IsNotEmpty()
   stars: number;
 
