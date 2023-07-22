@@ -167,28 +167,31 @@ export class ReviewsService {
     if (!toiletReview) {
       throw new NotFoundException(`리뷰가 존재하지 않습니다.`);
     }
+    await this.prisma.$transaction(async (prisma) => {
+      await prisma.toiletReviewEmoji.create({
+        data: { user_id: userId, toilet_review_id: toiletReviewId, emoji },
+      });
 
-    await this.prisma.toiletReviewEmoji.create({
-      data: { user_id: userId, toilet_review_id: toiletReviewId, emoji },
+      await this.updateToiletReviewEmojiCount(
+        toiletReviewId,
+        emoji,
+        EmojiCountUpdateType.INCREASE,
+        prisma,
+      );
     });
-
-    await this.updateToiletReviewEmojiCount(
-      toiletReviewId,
-      emoji,
-      EmojiCountUpdateType.INCREASE,
-    );
   }
 
   private async updateToiletReviewEmojiCount(
     toiletReviewId: number,
     emoji: Emoji,
     emojiCountUpdateType: EmojiCountUpdateType,
+    prisma,
   ) {
     const fieldToUpdate = `${emoji.toLocaleLowerCase()}_count`;
     const incrementValue =
       emojiCountUpdateType === EmojiCountUpdateType.INCREASE ? 1 : -1;
 
-    await this.prisma.toiletReviews.update({
+    await prisma.toiletReviews.update({
       where: { id: toiletReviewId },
       data: { [fieldToUpdate]: { increment: incrementValue } },
     });
