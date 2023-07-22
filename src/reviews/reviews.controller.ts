@@ -117,6 +117,22 @@ export class ReviewsController {
     return { status: 'success' };
   }
 
+  @Delete('/place/toilet/:toiletReviewId/toilet-emoji/:toiletReviewEmojiId')
+  @UseGuards(AccessTokenGuard)
+  async deleteToiletReviewEmoji(
+    @GetAuthorizedUser() user: Users,
+    @Param('toiletReviewId', ParseIntPipe) toiletReviewId: number,
+    @Param('toiletReviewEmojiId', ParseIntPipe) toiletReviewEmojiId: number,
+  ) {
+    await this.reviewsService.deleteToiletReviewEmoji(
+      user.id,
+      toiletReviewId,
+      toiletReviewEmojiId,
+    );
+
+    return { status: 'success' };
+  }
+
   @Get('/user/toilet')
   @UseGuards(AccessTokenGuard)
   async getUsersToiletReviews(
