@@ -37,6 +37,7 @@ export class PrismaExceptionFilter implements ExceptionFilter {
     let logMessage;
     let code;
     let meta;
+    console.log(exception);
 
     switch (exception.constructor) {
       case Prisma.PrismaClientInitializationError:

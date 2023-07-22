@@ -11,28 +11,110 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
-import { GetToiletReviewsDto } from './dto/get-toilet-reviews.dto';
-import { DeleteToiletReviewDto } from './dto/delete-toilet-reveiw-dto';
 import { EmojiLog, ToiletReview } from './interface/reviews.interface';
 import { CreateToiletReviewDto } from './dto/create-toilet-review.dto';
 import { UpdateToiletReviewDto } from './dto/update-toilet-review.dto';
 import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
 import { GetAuthorizedUser } from 'src/common/decorator/get-user.decorator';
-import { Users, Emoji } from '@prisma/client';
-import { UpdateEmojiDto } from './dto/emoji.dto';
+import { Users } from '@prisma/client';
+import { EmojiDto } from './dto/emoji.dto';
 
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
-  @Get('/place/toilet')
+  @Get('/place/:placeId/toilet')
   async getPlaceToiletReviews(
-    @Query() { placeId }: GetToiletReviewsDto,
+    @Param('placeId', ParseIntPipe) placeId: number,
   ): Promise<ToiletReview[]> {
     const ToiletReviews: ToiletReview[] =
       await this.reviewsService.getToiletReviewsByPlaceId(placeId);
 
     return ToiletReviews;
+  }
+
+  @Post('/place/:placeId/toilet')
+  @UseGuards(AccessTokenGuard)
+  async createToiletReview(
+    @GetAuthorizedUser() user: Users,
+    @Param('placeId', ParseIntPipe) placeId: number,
+    @Body() createToiletReviewDto: CreateToiletReviewDto,
+  ) {
+    await this.reviewsService.createToiletReview(
+      user.id,
+      placeId,
+      createToiletReviewDto,
+    );
+
+    return { status: 'success', message: '리뷰 작성 완료' };
+  }
+
+  @Patch('/place/:placeId/toilet/:toiletReviewId')
+  @UseGuards(AccessTokenGuard)
+  async updateToiletReview(
+    @GetAuthorizedUser() user: Users,
+    @Param('placeId', ParseIntPipe) placeId: number,
+    @Param('toiletReviewId', ParseIntPipe) toiletReviewId: number,
+    @Body() updateToiletReviewDto: UpdateToiletReviewDto,
+  ) {
+    await this.reviewsService.updateToiletReview(
+      user.id,
+      placeId,
+      toiletReviewId,
+      updateToiletReviewDto,
+    );
+
+    return { status: 'success', message: '리뷰 수정 완료' };
+  }
+
+  @Delete('/place/:placeId/toilet/:toiletReviewId')
+  @UseGuards(AccessTokenGuard)
+  async deleteToiletReview(
+    @GetAuthorizedUser() user: Users,
+    @Param('placeId', ParseIntPipe) placeId: number,
+    @Param('toiletReviewId', ParseIntPipe) toiletReviewId: number,
+  ) {
+    await this.reviewsService.deleteToiletReview(
+      user.id,
+      placeId,
+      toiletReviewId,
+    );
+
+    return { status: 'success', message: '리뷰 삭제 완료' };
+  }
+
+  @Post('/place/toilet/:toiletReviewId/toilet-emoji')
+  @UseGuards(AccessTokenGuard)
+  async createToiletReviewEmoji(
+    @GetAuthorizedUser() user: Users,
+    @Param('toiletReviewId', ParseIntPipe) toiletReviewId: number,
+    @Query() { emoji }: EmojiDto,
+  ) {
+    await this.reviewsService.createToiletReviewEmoji(
+      user.id,
+      toiletReviewId,
+      emoji,
+    );
+
+    return { status: 'success' };
+  }
+
+  @Patch('/place/toilet/:toiletReviewId/toilet-emoji/:toiletReviewEmojiId')
+  @UseGuards(AccessTokenGuard)
+  async updateToiletReviewEmoji(
+    @GetAuthorizedUser() user: Users,
+    @Param('toiletReviewId', ParseIntPipe) toiletReviewId: number,
+    @Param('toiletReviewEmojiId', ParseIntPipe) toiletReviewEmojiId: number,
+    @Query() { emoji }: EmojiDto,
+  ) {
+    await this.reviewsService.updateToiletReviewEmoji(
+      user.id,
+      toiletReviewId,
+      toiletReviewEmojiId,
+      emoji,
+    );
+
+    return { status: 'success' };
   }
 
   @Get('/user/toilet')
@@ -46,54 +128,12 @@ export class ReviewsController {
     return ToiletReviews;
   }
 
-  @Post('/toilet')
-  async createToiletReview(
-    @Body() createToiletReviewDto: CreateToiletReviewDto,
-  ) {
-    await this.reviewsService.createToiletReview(createToiletReviewDto);
-
-    return { status: 'success', message: '리뷰 작성 완료' };
-  }
-
-  @Patch('/toilet')
-  async updateToiletReview(
-    @Body() updateToiletReviewDto: UpdateToiletReviewDto,
-  ) {
-    await this.reviewsService.updateToiletReview(updateToiletReviewDto);
-
-    return { status: 'success', message: '리뷰 수정 완료' };
-  }
-
-  @Delete('/toilet')
-  async deleteToiletReview(
-    @Body() deleteToiletReviewDto: DeleteToiletReviewDto,
-  ) {
-    await this.reviewsService.deleteToiletReview(deleteToiletReviewDto);
-
-    return { status: 'success', message: '리뷰 삭제 완료' };
-  }
-
-  @Get('/user/toilet/emoji')
+  @Get('/user/toilet-emoji')
   @UseGuards(AccessTokenGuard)
   async getUsersToiletReviewsEmoji(@GetAuthorizedUser() user: Users) {
     const emojiLog: EmojiLog[] =
       await this.reviewsService.getUsersToiletReviewEmojiLog(user);
 
     return { emojiLog };
-  }
-
-  @Post('/toilet/:toiletReviewId')
-  @UseGuards(AccessTokenGuard)
-  async createToiletReviewEmoji(
-    @GetAuthorizedUser() user: Users,
-    @Param('toiletReviewId', ParseIntPipe) toiletReviewId: number,
-    @Query() { emoji }: UpdateEmojiDto,
-  ) {
-    await this.reviewsService.createToiletReviewEmoji(
-      user.id,
-      toiletReviewId,
-      emoji,
-    );
-    return { status: 'success' };
   }
 }

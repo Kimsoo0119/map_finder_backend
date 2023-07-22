@@ -12,18 +12,6 @@ import {
 
 export class UpdateToiletReviewDto {
   @IsNumber()
-  @IsNotEmpty()
-  placeId: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  reviewId: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  userId: number;
-
-  @IsNumber()
   @IsOptional()
   stars: number;
 
