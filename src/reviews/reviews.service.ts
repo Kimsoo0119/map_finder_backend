@@ -163,6 +163,7 @@ export class ReviewsService {
       await this.prisma.toiletReviews.findUnique({
         where: { id: toiletReviewId },
       });
+
     if (!toiletReview) {
       throw new NotFoundException(`리뷰가 존재하지 않습니다.`);
     }
@@ -204,5 +205,57 @@ export class ReviewsService {
     });
 
     return emojiLog;
+  }
+
+  async updateToiletReviewEmoji(
+    userId: number,
+    toiletReviewId: number,
+    toiletReviewEmojiId: number,
+    emoji: Emoji,
+  ) {
+    const emojiFieldToDecrease = await this.getEmojiFieldToDecrease(
+      userId,
+      toiletReviewEmojiId,
+      emoji,
+    );
+    if (!emojiFieldToDecrease) {
+      return;
+    }
+
+    await this.prisma.$transaction(async (prisma) => {
+      await prisma.toiletReviewEmoji.update({
+        where: { id: toiletReviewEmojiId },
+        data: { emoji },
+      });
+      const emojiFieldToIncrease = `${emoji.toLocaleLowerCase()}_count`;
+
+      await prisma.toiletReviews.update({
+        where: { id: toiletReviewId },
+        data: {
+          [emojiFieldToDecrease]: { increment: -1 },
+          [emojiFieldToIncrease]: { increment: 1 },
+        },
+      });
+    });
+  }
+
+  private async getEmojiFieldToDecrease(userId, toiletReviewEmojiId, emoji) {
+    const emojiLog = await this.prisma.toiletReviewEmoji.findUnique({
+      where: {
+        id: toiletReviewEmojiId,
+      },
+    });
+
+    if (!emojiLog) {
+      throw new NotFoundException(`이모지 내역이 존재하지 않습니다.`);
+    }
+    if (emojiLog.user_id !== userId) {
+      throw new BadRequestException(`작성자만 수정 가능합니다.`);
+    }
+    if (emojiLog.emoji === emoji) {
+      return;
+    }
+
+    return `${emojiLog.emoji.toLocaleLowerCase()}_count`;
   }
 }

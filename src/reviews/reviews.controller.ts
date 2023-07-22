@@ -19,7 +19,7 @@ import { UpdateToiletReviewDto } from './dto/update-toilet-review.dto';
 import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
 import { GetAuthorizedUser } from 'src/common/decorator/get-user.decorator';
 import { Users, Emoji } from '@prisma/client';
-import { UpdateEmojiDto } from './dto/emoji.dto';
+import { EmojiDto } from './dto/emoji.dto';
 
 @Controller('reviews')
 export class ReviewsController {
@@ -35,6 +35,33 @@ export class ReviewsController {
     return ToiletReviews;
   }
 
+  @Post('/place/toilet')
+  async createToiletReview(
+    @Body() createToiletReviewDto: CreateToiletReviewDto,
+  ) {
+    await this.reviewsService.createToiletReview(createToiletReviewDto);
+
+    return { status: 'success', message: '리뷰 작성 완료' };
+  }
+
+  @Patch('/place/toilet')
+  async updateToiletReview(
+    @Body() updateToiletReviewDto: UpdateToiletReviewDto,
+  ) {
+    await this.reviewsService.updateToiletReview(updateToiletReviewDto);
+
+    return { status: 'success', message: '리뷰 수정 완료' };
+  }
+
+  @Delete('/place/toilet')
+  async deleteToiletReview(
+    @Body() deleteToiletReviewDto: DeleteToiletReviewDto,
+  ) {
+    await this.reviewsService.deleteToiletReview(deleteToiletReviewDto);
+
+    return { status: 'success', message: '리뷰 삭제 완료' };
+  }
+
   @Get('/user/toilet')
   @UseGuards(AccessTokenGuard)
   async getUsersToiletReviews(
@@ -46,34 +73,7 @@ export class ReviewsController {
     return ToiletReviews;
   }
 
-  @Post('/toilet')
-  async createToiletReview(
-    @Body() createToiletReviewDto: CreateToiletReviewDto,
-  ) {
-    await this.reviewsService.createToiletReview(createToiletReviewDto);
-
-    return { status: 'success', message: '리뷰 작성 완료' };
-  }
-
-  @Patch('/toilet')
-  async updateToiletReview(
-    @Body() updateToiletReviewDto: UpdateToiletReviewDto,
-  ) {
-    await this.reviewsService.updateToiletReview(updateToiletReviewDto);
-
-    return { status: 'success', message: '리뷰 수정 완료' };
-  }
-
-  @Delete('/toilet')
-  async deleteToiletReview(
-    @Body() deleteToiletReviewDto: DeleteToiletReviewDto,
-  ) {
-    await this.reviewsService.deleteToiletReview(deleteToiletReviewDto);
-
-    return { status: 'success', message: '리뷰 삭제 완료' };
-  }
-
-  @Get('/user/toilet/emoji')
+  @Get('/user/toilet-emoji')
   @UseGuards(AccessTokenGuard)
   async getUsersToiletReviewsEmoji(@GetAuthorizedUser() user: Users) {
     const emojiLog: EmojiLog[] =
@@ -82,18 +82,37 @@ export class ReviewsController {
     return { emojiLog };
   }
 
-  @Post('/toilet/:toiletReviewId')
+  @Post('/place/:toiletReviewId/toilet-emoji')
   @UseGuards(AccessTokenGuard)
   async createToiletReviewEmoji(
     @GetAuthorizedUser() user: Users,
     @Param('toiletReviewId', ParseIntPipe) toiletReviewId: number,
-    @Query() { emoji }: UpdateEmojiDto,
+    @Query() { emoji }: EmojiDto,
   ) {
     await this.reviewsService.createToiletReviewEmoji(
       user.id,
       toiletReviewId,
       emoji,
     );
+
+    return { status: 'success' };
+  }
+
+  @Patch('/place/:toiletReviewId/toilet-emoji/:toiletReviewEmojiId')
+  @UseGuards(AccessTokenGuard)
+  async updateToiletReviewEmoji(
+    @GetAuthorizedUser() user: Users,
+    @Param('toiletReviewId', ParseIntPipe) toiletReviewId: number,
+    @Param('toiletReviewEmojiId', ParseIntPipe) toiletReviewEmojiId: number,
+    @Query() { emoji }: EmojiDto,
+  ) {
+    await this.reviewsService.updateToiletReviewEmoji(
+      user.id,
+      toiletReviewId,
+      toiletReviewEmojiId,
+      emoji,
+    );
+
     return { status: 'success' };
   }
 }
