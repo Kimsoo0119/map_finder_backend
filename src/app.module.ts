@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtCustomModule } from './common/config/jwt.module.config';
 import { CacheCustomModule } from './common/config/cache.module.config';
 import { CustomConfigModule } from './common/config/config-module.config';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CustomConfigModule } from './common/config/config-module.config';
     ReviewsModule,
     UsersModule,
     AuthModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

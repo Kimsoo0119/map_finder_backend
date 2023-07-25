@@ -17,6 +17,20 @@ enum Emoji {
   SAD
 }
 
+enum ReportType {
+  USER
+  TOILET_REVIEW
+}
+
+enum Reason {
+  INAPPROPRIATE_NICKNAME
+  INAPPROPRIATE_CONTENT
+  CONTAINS_PROFANITY
+  HARASSMENT
+  SPAM
+  OTHER
+}
+
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native"]
@@ -32,10 +46,15 @@ model Users {
   email               String              @unique
   nickname            String              @unique
   created_at          DateTime            @default(now())
+  is_suspended        Boolean?
+  suspension_end_date DateTime?
+  report_count        Int                 @default(0)
   sign_up_type        SignUpType
   authentication      Authentication?
   toilet_reviews      ToiletReviews[]
   toilet_review_emoji ToiletReviewEmoji[]
+  reported_reports    Reports[]           @relation("ReportedUser")
+  target_reports      Reports[]           @relation("TargetUser")
 }
 
 model Places {
@@ -95,6 +114,7 @@ model ToiletReviews {
   user                Users               @relation(fields: [user_id], references: [id], onDelete: Cascade)
   place               Places              @relation(fields: [place_id], references: [id])
   toilet_review_emoji ToiletReviewEmoji[]
+  report              Reports[]
 
   @@unique([place_id, user_id])
 }
@@ -108,4 +128,17 @@ model ToiletReviewEmoji {
   user             Users         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([toilet_review_id, user_id])
+}
+
+model Reports {
+  id                      Int            @id @default(autoincrement())
+  report_type             ReportType
+  reporter_id             Int
+  target_user_id          Int?
+  target_toilet_review_id Int?
+  reason                  Reason
+  description             String?
+  reporter                Users          @relation("ReportedUser", fields: [reporter_id], references: [id])
+  target_user             Users?         @relation("TargetUser", fields: [target_user_id], references: [id])
+  target_toilet_review    ToiletReviews? @relation(fields: [target_toilet_review_id], references: [id])
 }

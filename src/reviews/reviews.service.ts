@@ -1,35 +1,22 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EmojiLog, ToiletReview } from './interface/reviews.interface';
-import { Emoji, Places, ToiletReviews, Users } from '@prisma/client';
+import { Emoji, ToiletReviews, Users } from '@prisma/client';
 import { CreateToiletReviewDto } from './dto/create-toilet-review.dto';
 import { UpdateToiletReviewDto } from './dto/update-toilet-review.dto';
-import { number } from 'joi';
-import {
-  PrismaClientKnownRequestError,
-  PrismaClientUnknownRequestError,
-} from '@prisma/client/runtime';
 import { ConfigService } from '@nestjs/config';
-import { error } from 'console';
 import { EmojiCountUpdateType } from 'src/common/enum/review.enum';
 
 @Injectable()
 export class ReviewsService {
-  private readonly prismaClientVersion: string;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-  ) {
-    this.prismaClientVersion = configService.get<string>(
-      'PRISMA_CLIENT_VERSION',
-    );
-  }
+  ) {}
   async getToiletReviewsByPlaceId(placeId: number): Promise<ToiletReview[]> {
     const toiletReviews: ToiletReview[] =
       await this.prisma.toiletReviews.findMany({
