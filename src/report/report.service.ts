@@ -48,7 +48,7 @@ export class ReportService {
     });
   }
 
-  async deleteUserReport(userId: number, reportId: number): Promise<void> {
+  async deleteReport(userId: number, reportId: number): Promise<void> {
     const isAuthorship: boolean = await this.checkReportAuthorship(
       userId,
       reportId,
