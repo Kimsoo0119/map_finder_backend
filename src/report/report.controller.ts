@@ -1,4 +1,12 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Delete,
+  UseGuards,
+  ParseIntPipe,
+  Param,
+} from '@nestjs/common';
 import { ReportService } from './report.service';
 import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
 import { GetAuthorizedUser } from 'src/common/decorator/get-user.decorator';
@@ -19,6 +27,17 @@ export class ReportController {
     await this.reportService.createUserReport(user.id, createUserReportDto);
 
     return { status: 'success', message: '유저 신고 완료' };
+  }
+
+  @Delete('/user/:reportId')
+  @UseGuards(AccessTokenGuard)
+  async deleteUserReport(
+    @Param('reportId', ParseIntPipe) reportId: number,
+    @GetAuthorizedUser() user: Users,
+  ) {
+    await this.reportService.deleteUserReport(user.id, reportId);
+
+    return { status: 'success', message: '유저 신고 내역 삭제 완료' };
   }
 
   @Post('/toilet-review')

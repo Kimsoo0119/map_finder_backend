@@ -43,6 +43,28 @@ export class ReportService {
     });
   }
 
+  async deleteUserReport(userId: number, reportId: number) {
+    const isAuthorship: boolean = await this.checkReportAuthorship(
+      userId,
+      reportId,
+    );
+    if (!isAuthorship) {
+      throw new BadRequestException(`작성자만 삭제 가능합니다.`);
+    }
+
+    await this.prisma.reports.delete({ where: { id: reportId } });
+  }
+
+  private async checkReportAuthorship(userId: number, reportId: number) {
+    const report = await this.prisma.reports.findUnique({
+      where: { id: reportId },
+    });
+    if (!report) {
+      throw new NotFoundException(`신고내역이 존재하지 않습니다.`);
+    }
+    return report.reporter_id === userId ? true : false;
+  }
+
   async createToiletReviewReport(
     userId: number,
     createToiletReviewReportDto: CreateToiletReviewReportDto,
