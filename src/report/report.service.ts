@@ -6,16 +6,21 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserReportDto } from './dto/create-user-report.dto';
 import { CreateToiletReviewReportDto } from './dto/create-toilet-review-report.dto';
-import { ReportType } from '@prisma/client';
+import { ReportType, Reports } from '@prisma/client';
 
 @Injectable()
 export class ReportService {
   constructor(private readonly prisma: PrismaService) {}
+  async getReports(userId: number): Promise<Reports[]> {
+    return await this.prisma.reports.findMany({
+      where: { reporter_id: userId },
+    });
+  }
 
   async createUserReport(
     userId: number,
     createUserReportDto: CreateUserReportDto,
-  ) {
+  ): Promise<void> {
     const { targetUserId, reportType, reason, description } =
       createUserReportDto;
     if (reportType !== ReportType.USER) {
@@ -43,7 +48,7 @@ export class ReportService {
     });
   }
 
-  async deleteUserReport(userId: number, reportId: number) {
+  async deleteUserReport(userId: number, reportId: number): Promise<void> {
     const isAuthorship: boolean = await this.checkReportAuthorship(
       userId,
       reportId,
@@ -55,7 +60,10 @@ export class ReportService {
     await this.prisma.reports.delete({ where: { id: reportId } });
   }
 
-  private async checkReportAuthorship(userId: number, reportId: number) {
+  private async checkReportAuthorship(
+    userId: number,
+    reportId: number,
+  ): Promise<boolean> {
     const report = await this.prisma.reports.findUnique({
       where: { id: reportId },
     });
@@ -68,7 +76,7 @@ export class ReportService {
   async createToiletReviewReport(
     userId: number,
     createToiletReviewReportDto: CreateToiletReviewReportDto,
-  ) {
+  ): Promise<void> {
     const { targetToiletReviewId, reportType, reason, description } =
       createToiletReviewReportDto;
     if (reportType !== ReportType.TOILET_REVIEW) {

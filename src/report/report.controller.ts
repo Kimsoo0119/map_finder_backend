@@ -6,17 +6,25 @@ import {
   UseGuards,
   ParseIntPipe,
   Param,
+  Get,
 } from '@nestjs/common';
 import { ReportService } from './report.service';
 import { AccessTokenGuard } from 'src/common/guard/access-token.guard';
 import { GetAuthorizedUser } from 'src/common/decorator/get-user.decorator';
-import { Users } from '@prisma/client';
+import { Reports, Users } from '@prisma/client';
 import { CreateUserReportDto } from './dto/create-user-report.dto';
 import { CreateToiletReviewReportDto } from './dto/create-toilet-review-report.dto';
 
 @Controller('report')
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
+  @Get()
+  @UseGuards(AccessTokenGuard)
+  async getReports(@GetAuthorizedUser() user: Users) {
+    const reports: Reports[] = await this.reportService.getReports(user.id);
+
+    return { status: 'success', data: reports };
+  }
 
   @Post('/user')
   @UseGuards(AccessTokenGuard)
