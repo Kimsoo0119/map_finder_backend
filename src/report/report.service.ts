@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserReportDto } from './dto/create-user-report.dto';
+import { CreateToiletReviewReportDto } from './dto/create-toilet-review-report.dto';
+import { ReportType } from '@prisma/client';
 
 @Injectable()
 export class ReportService {
@@ -16,6 +18,9 @@ export class ReportService {
   ) {
     const { targetUserId, reportType, reason, description } =
       createUserReportDto;
+    if (reportType !== ReportType.USER) {
+      throw new BadRequestException(`잘못된 요청입니다.`);
+    }
 
     const targetUserExist = await this.prisma.users.findUnique({
       where: { id: targetUserId },
@@ -31,6 +36,37 @@ export class ReportService {
       data: {
         reporter_id: userId,
         target_user_id: targetUserId,
+        report_type: reportType,
+        reason,
+        description,
+      },
+    });
+  }
+
+  async createToiletReviewReport(
+    userId: number,
+    createToiletReviewReportDto: CreateToiletReviewReportDto,
+  ) {
+    const { targetToiletReviewId, reportType, reason, description } =
+      createToiletReviewReportDto;
+    if (reportType !== ReportType.TOILET_REVIEW) {
+      throw new BadRequestException(`잘못된 요청입니다.`);
+    }
+
+    const targetToiletReviewExist = await this.prisma.toiletReviews.findUnique({
+      where: { id: targetToiletReviewId },
+    });
+    if (!targetToiletReviewExist) {
+      throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
+    }
+    if (targetToiletReviewExist.id === userId) {
+      throw new BadRequestException(`타인만 신고 가능합니다.`);
+    }
+
+    await this.prisma.reports.create({
+      data: {
+        reporter_id: userId,
+        target_toilet_review_id: targetToiletReviewId,
         report_type: reportType,
         reason,
         description,
