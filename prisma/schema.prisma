@@ -141,4 +141,7 @@ model Reports {
   reporter                Users          @relation("ReportedUser", fields: [reporter_id], references: [id])
   target_user             Users?         @relation("TargetUser", fields: [target_user_id], references: [id])
   target_toilet_review    ToiletReviews? @relation(fields: [target_toilet_review_id], references: [id])
+
+  @@unique([reporter_id, target_user_id])
+  @@unique([reporter_id, target_toilet_review_id])
 }
