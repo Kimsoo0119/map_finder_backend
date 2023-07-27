@@ -26,6 +26,17 @@ export class ReportController {
     return { status: 'success', data: reports };
   }
 
+  @Delete('/:reportId')
+  @UseGuards(AccessTokenGuard)
+  async deleteUserReport(
+    @Param('reportId', ParseIntPipe) reportId: number,
+    @GetAuthorizedUser() user: Users,
+  ) {
+    await this.reportService.deleteReport(user.id, reportId);
+
+    return { status: 'success', message: '신고 내역 삭제 완료' };
+  }
+
   @Post('/user')
   @UseGuards(AccessTokenGuard)
   async createUserReport(
@@ -35,17 +46,6 @@ export class ReportController {
     await this.reportService.createUserReport(user.id, createUserReportDto);
 
     return { status: 'success', message: '유저 신고 완료' };
-  }
-
-  @Delete('/user/:reportId')
-  @UseGuards(AccessTokenGuard)
-  async deleteUserReport(
-    @Param('reportId', ParseIntPipe) reportId: number,
-    @GetAuthorizedUser() user: Users,
-  ) {
-    await this.reportService.deleteUserReport(user.id, reportId);
-
-    return { status: 'success', message: '유저 신고 내역 삭제 완료' };
   }
 
   @Post('/toilet-review')
