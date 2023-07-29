@@ -9,15 +9,6 @@ import {
 @Controller('places')
 export class PlacesController {
   constructor(private readonly placeService: PlacesService) {}
-  @Get('/:placeTitle')
-  async getPlacesWithNaver(
-    @Param('placeTitle') placeTitle: string,
-  ): Promise<PlaceInformation[]> {
-    const places: PlaceInformation[] =
-      await this.placeService.getPlacesWithNaver(placeTitle);
-
-    return places;
-  }
 
   @Get('/')
   async getPlace(
@@ -27,5 +18,24 @@ export class PlacesController {
       await this.placeService.getPlace(places);
 
     return place;
+  }
+
+  @Get('/list/:placeTitle')
+  async getPlacesWithNaver(
+    @Param('placeTitle') placeTitle: string,
+  ): Promise<PlaceInformation[]> {
+    const places: PlaceInformation[] =
+      await this.placeService.getPlacesWithNaver(placeTitle);
+
+    return places;
+  }
+
+  @Get('/recommended/:address')
+  async getRecommendPlace(@Param('address') address: string) {
+    const recommendedPlace = await this.placeService.getRecommendedPlace(
+      address,
+    );
+
+    return recommendedPlace;
   }
 }

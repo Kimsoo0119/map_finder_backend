@@ -299,4 +299,31 @@ export class PlacesService {
 
     return { administrativeDistrict, district, detailAddress };
   }
+
+  async getRecommendedPlace(address: string) {
+    const selectedRegionId = await this.getAddressRegionId(address);
+
+    const recommendedPlace = await this.prisma.places.findMany({
+      where: {
+        region_id: selectedRegionId,
+      },
+    });
+    console.log(recommendedPlace);
+  }
+
+  private async getAddressRegionId(address: string): Promise<number> {
+    const extractAddress: ExtractAddress =
+      this.extractDistrictAndAddress(address);
+
+    const { id } = await this.prisma.regions.findFirst({
+      where: {
+        administrative_district: extractAddress.administrativeDistrict,
+        district: extractAddress.district,
+      },
+      select: {
+        id: true,
+      },
+    });
+    return id;
+  }
 }
