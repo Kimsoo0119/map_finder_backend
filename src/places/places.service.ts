@@ -21,7 +21,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { load } from 'cheerio';
 import { ConfigService } from '@nestjs/config';
-import { Places } from '@prisma/client';
+import { PlaceCategories, Places } from '@prisma/client';
 
 @Injectable()
 export class PlacesService {
@@ -73,24 +73,30 @@ export class PlacesService {
         place_category: { select: { main: true, sub: true } },
       },
     });
-    if (selectedPlace) {
-      return selectedPlace;
+    if (!selectedPlace) {
+      const crawledPlace = await this.crawlNaverPlace(place.title);
+      const placeDataToCreate = await this.createPlaceData(place, crawledPlace);
+      const createdPlace: Place = await this.createPlace(
+        placeDataToCreate,
+        extractAddress,
+      );
+      if (crawledPlace.naverReviews) {
+        await this.createNaverReviews(
+          createdPlace.id,
+          crawledPlace.naverReviews,
+        );
+      }
+
+      return createdPlace;
     }
 
-    const crawledPlace = await this.crawlNaverPlace(place.title);
-    const placeDataToCreate = await this.createPlaceData(place, crawledPlace);
-    const createdPlace: Place = await this.createPlace(
-      placeDataToCreate,
-      extractAddress,
-    );
-    if (crawledPlace.naverReviews) {
-      await this.createNaverReviews(createdPlace.id, crawledPlace.naverReviews);
-    }
-
-    return createdPlace;
+    return selectedPlace;
   }
 
-  private async createPlaceData(place, crawledPlace) {
+  private async createPlaceData(
+    place,
+    crawledPlace,
+  ): Promise<PlacesCreateInput> {
     place.category_id = await this.getPlaceCategoryId(place.category);
     delete place.category;
 
@@ -303,21 +309,22 @@ export class PlacesService {
     return { administrativeDistrict, district, detailAddress };
   }
 
-  private async getPlaceCategoryId(category) {
+  private async getPlaceCategoryId(category): Promise<number> {
     const [mainCategory, subCategory] = category.split('>');
 
-    const categoryId = await this.prisma.placeCategories.findUnique({
-      where: { main_sub: { main: mainCategory, sub: subCategory } },
-    });
-    if (categoryId) {
-      return categoryId.id;
+    const categoryId: PlaceCategories =
+      await this.prisma.placeCategories.findUnique({
+        where: { main_sub: { main: mainCategory, sub: subCategory } },
+      });
+    if (!categoryId) {
+      const createdCategoryId: PlaceCategories =
+        await this.prisma.placeCategories.create({
+          data: { main: mainCategory, sub: subCategory },
+        });
+      return createdCategoryId.id;
     }
 
-    const createdCategoryId = await this.prisma.placeCategories.create({
-      data: { main: mainCategory, sub: subCategory },
-    });
-
-    return createdCategoryId.id;
+    return categoryId.id;
   }
 
   async getRecommendedPlace(address: string) {
@@ -328,7 +335,6 @@ export class PlacesService {
         region_id: selectedRegionId,
       },
     });
-    console.log(recommendedPlace);
   }
 
   private async getAddressRegionIdAddress(address: string): Promise<number> {

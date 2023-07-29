@@ -2,6 +2,7 @@ import { Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { PlaceDto } from './dto/place.dto';
 import { PlacesService } from './places.service';
 import {
+  Place,
   PlaceInformation,
   PlacesCreateInput,
 } from './interface/places.interface';
@@ -11,9 +12,9 @@ export class PlacesController {
   constructor(private readonly placeService: PlacesService) {}
 
   @Get('/')
-  async getPlace(@Query() places: PlaceDto) {
-    const place = await this.placeService.getPlace(places);
-    console.log(place);
+  async getPlace(@Query() places: PlaceDto): Promise<Place> {
+    const place: Place = await this.placeService.getPlace(places);
+
     return place;
   }
 
