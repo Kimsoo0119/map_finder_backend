@@ -72,3 +72,7 @@ export interface CrawledNaverPlace {
   naver_stars: string;
   naver_reviewer_counts: string;
 }
+export interface CrawledPlace {
+  placeInfo: CrawledNaverPlace;
+  naverReviews: any[];
+}
