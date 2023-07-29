@@ -62,7 +62,7 @@ model Places {
   title                 String
   region_id             Int?
   address               String
-  category              String?
+  category_id           Int
   thum_url              String?
   telephone             String?
   stars                 String?
@@ -72,6 +72,7 @@ model Places {
   naver_review          NaverReviews[]
   toilet_reviews        ToiletReviews[]
   region                Regions?        @relation(fields: [region_id], references: [id])
+  place_category        PlaceCategories @relation(fields: [category_id], references: [id])
 }
 
 model NaverReviews {
@@ -144,4 +145,13 @@ model Reports {
 
   @@unique([reporter_id, target_user_id])
   @@unique([reporter_id, target_toilet_review_id])
+}
+
+model PlaceCategories {
+  id     Int      @id @default(autoincrement())
+  main   String
+  sub    String?
+  places Places[]
+
+  @@unique([main, sub])
 }
