@@ -11,12 +11,9 @@ export class PlacesController {
   constructor(private readonly placeService: PlacesService) {}
 
   @Get('/')
-  async getPlace(
-    @Query() places: PlaceDto,
-  ): Promise<PlaceInformation | PlacesCreateInput> {
-    const place: PlaceInformation | PlacesCreateInput =
-      await this.placeService.getPlace(places);
-
+  async getPlace(@Query() places: PlaceDto) {
+    const place = await this.placeService.getPlace(places);
+    console.log(place);
     return place;
   }
 

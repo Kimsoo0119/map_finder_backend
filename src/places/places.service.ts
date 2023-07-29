@@ -8,6 +8,7 @@ import { PlaceDto } from './dto/place.dto';
 import {
   CrawledNaverPlace,
   ExtractAddress,
+  Place,
   PlaceInformation,
   PlaceSummary,
   PlacesCreateInput,
@@ -51,57 +52,58 @@ export class PlacesService {
     };
   }
 
-  async getPlace(
-    place: PlaceDto,
-  ): Promise<PlaceInformation | PlacesCreateInput> {
+  async getPlace(place: PlaceDto): Promise<Place> {
     const { title, address } = place;
 
     const extractAddress: ExtractAddress =
       this.extractDistrictAndAddress(address);
     place.address = extractAddress.detailAddress;
 
-    const selectedPlace: PlaceInformation = await this.prisma.places.findFirst({
+    const selectedPlace: Place = await this.prisma.places.findFirst({
       where: { title, address: extractAddress.detailAddress },
+      select: {
+        id: true,
+        address: true,
+        telephone: true,
+        stars: true,
+        naver_reviewer_counts: true,
+        naver_stars: true,
+        thum_url: true,
+        region: { select: { administrative_district: true, district: true } },
+        place_category: { select: { main: true, sub: true } },
+      },
     });
-    if (!selectedPlace) {
-      const createdPlace: PlacesCreateInput = await this.createPlaceWithCrawl(
-        place,
-        extractAddress,
-      );
-
-      return createdPlace;
+    if (selectedPlace) {
+      return selectedPlace;
     }
 
-    return selectedPlace;
-  }
-
-  private async createPlaceWithCrawl(
-    place,
-    extractAddress,
-  ): Promise<PlacesCreateInput> {
-    const { crawledNaverPlace, naverReviews } = await this.crawlPlace(
-      place.title,
-    );
-
-    const crawledPlace: PlacesCreateInput = {
-      ...place,
-      ...crawledNaverPlace,
-    };
-
-    const createdPlaceId: number = await this.createPlace(
-      crawledPlace,
+    const crawledPlace = await this.crawlNaverPlace(place.title);
+    const placeDataToCreate = await this.createPlaceData(place, crawledPlace);
+    const createdPlace: Place = await this.createPlace(
+      placeDataToCreate,
       extractAddress,
     );
-
-    if (naverReviews) {
-      await this.createNaverReviews(createdPlaceId, naverReviews);
+    if (crawledPlace.naverReviews) {
+      await this.createNaverReviews(createdPlace.id, crawledPlace.naverReviews);
     }
 
-    return crawledPlace;
+    return createdPlace;
   }
 
-  private async crawlPlace(title: string): Promise<{
-    crawledNaverPlace: CrawledNaverPlace;
+  private async createPlaceData(place, crawledPlace) {
+    place.category_id = await this.getPlaceCategoryId(place.category);
+    delete place.category;
+
+    const placeDataToCreate: PlacesCreateInput = {
+      ...place,
+      ...crawledPlace.placeInfo,
+    };
+
+    return placeDataToCreate;
+  }
+
+  private async crawlNaverPlace(title: string): Promise<{
+    placeInfo: CrawledNaverPlace;
     naverReviews: any[];
   }> {
     const { naverPlaceId, thumUrl: thum_url }: CrawledNaverPlaceInformations =
@@ -110,14 +112,14 @@ export class PlacesService {
     const { naver_stars, naver_reviewer_counts, naverReviews } =
       await this.crawlNaverReviewsAndStars(naverPlaceId);
 
-    const crawledNaverPlace: CrawledNaverPlace = {
+    const placeInfo: CrawledNaverPlace = {
       naver_place_id: naverPlaceId,
       thum_url,
       naver_stars,
       naver_reviewer_counts,
     };
 
-    return { crawledNaverPlace, naverReviews };
+    return { placeInfo, naverReviews };
   }
 
   private async crawlNaverReviewsAndStars(naverPlaceId: string) {
@@ -168,9 +170,9 @@ export class PlacesService {
   }
 
   private async createPlace(
-    place: PlacesCreateInput,
+    placeDataToCreate: PlacesCreateInput,
     extractAddress: ExtractAddress,
-  ): Promise<number> {
+  ): Promise<Place> {
     const selectedRegion = await this.prisma.regions.findFirst({
       where: {
         administrative_district: extractAddress.administrativeDistrict,
@@ -180,13 +182,24 @@ export class PlacesService {
         id: true,
       },
     });
-    place.region_id = selectedRegion.id;
+    placeDataToCreate.region_id = selectedRegion.id;
 
-    const createdPlace: Places = await this.prisma.places.create({
-      data: { ...place },
+    const createdPlace: Place = await this.prisma.places.create({
+      data: { ...placeDataToCreate },
+      select: {
+        id: true,
+        address: true,
+        telephone: true,
+        stars: true,
+        naver_reviewer_counts: true,
+        naver_stars: true,
+        thum_url: true,
+        region: { select: { administrative_district: true, district: true } },
+        place_category: { select: { main: true, sub: true } },
+      },
     });
 
-    return createdPlace.id;
+    return createdPlace;
   }
 
   private async createNaverReviews(
@@ -206,16 +219,6 @@ export class PlacesService {
   }
 
   async getPlacesWithNaver(placeTitle: string): Promise<PlaceInformation[]> {
-    const places: PlaceInformation[] = await this.sendNaverSearchApi(
-      placeTitle,
-    );
-
-    return places;
-  }
-
-  private async sendNaverSearchApi(
-    placeTitle: string,
-  ): Promise<Array<PlaceInformation>> {
     const params = {
       query: placeTitle,
       display: 5,
@@ -300,8 +303,25 @@ export class PlacesService {
     return { administrativeDistrict, district, detailAddress };
   }
 
+  private async getPlaceCategoryId(category) {
+    const [mainCategory, subCategory] = category.split('>');
+
+    const categoryId = await this.prisma.placeCategories.findUnique({
+      where: { main_sub: { main: mainCategory, sub: subCategory } },
+    });
+    if (categoryId) {
+      return categoryId.id;
+    }
+
+    const createdCategoryId = await this.prisma.placeCategories.create({
+      data: { main: mainCategory, sub: subCategory },
+    });
+
+    return createdCategoryId.id;
+  }
+
   async getRecommendedPlace(address: string) {
-    const selectedRegionId = await this.getAddressRegionId(address);
+    const selectedRegionId = await this.getAddressRegionIdAddress(address);
 
     const recommendedPlace = await this.prisma.places.findMany({
       where: {
@@ -311,7 +331,7 @@ export class PlacesService {
     console.log(recommendedPlace);
   }
 
-  private async getAddressRegionId(address: string): Promise<number> {
+  private async getAddressRegionIdAddress(address: string): Promise<number> {
     const extractAddress: ExtractAddress =
       this.extractDistrictAndAddress(address);
 
