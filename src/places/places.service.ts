@@ -7,6 +7,7 @@ import axios from 'axios';
 import { PlaceDto } from './dto/place.dto';
 import {
   CrawledNaverPlace,
+  CrawledPlace,
   ExtractAddress,
   Place,
   PlaceInformation,
@@ -74,8 +75,13 @@ export class PlacesService {
       },
     });
     if (!selectedPlace) {
-      const crawledPlace = await this.crawlNaverPlace(place.title);
-      const placeDataToCreate = await this.createPlaceData(place, crawledPlace);
+      const crawledPlace: CrawledPlace = await this.crawlNaverPlace(
+        place.title,
+      );
+      const placeDataToCreate: PlacesCreateInput = await this.createPlaceData(
+        place,
+        crawledPlace,
+      );
       const createdPlace: Place = await this.createPlace(
         placeDataToCreate,
         extractAddress,
