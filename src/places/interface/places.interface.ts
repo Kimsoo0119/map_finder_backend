@@ -1,5 +1,23 @@
 import { NaverReview } from 'src/common/interface/common-interface';
 
+export interface Place {
+  address: string;
+  id: number;
+  telephone: string;
+  stars: string;
+  naver_reviewer_counts: string;
+  naver_stars: string;
+  thum_url: string;
+  region: {
+    district: string;
+    administrative_district: string;
+  };
+  place_category: {
+    main: string;
+    sub: string;
+  };
+}
+
 export interface PlaceInformation {
   id?: number;
   title: string;
@@ -22,8 +40,8 @@ export interface PlaceInformation {
 export interface PlacesCreateInput {
   title: string;
   address: string;
-  region_id?: number;
-  category?: string | null;
+  region_id?: number | null;
+  category_id: number;
   thum_url?: string | null;
   telephone?: string | null;
   stars?: string | null;
