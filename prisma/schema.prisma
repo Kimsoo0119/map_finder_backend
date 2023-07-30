@@ -69,6 +69,7 @@ model Places {
   naver_place_id        String?
   naver_stars           String?
   naver_reviewer_counts String?
+  is_init               Boolean         @default(false)
   naver_review          NaverReviews[]
   toilet_reviews        ToiletReviews[]
   region                Regions?        @relation(fields: [region_id], references: [id])

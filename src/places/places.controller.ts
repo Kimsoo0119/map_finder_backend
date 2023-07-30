@@ -5,6 +5,7 @@ import {
   Place,
   PlaceInformation,
   PlacesCreateInput,
+  RecommendedRestaurants,
 } from './interface/places.interface';
 
 @Controller('places')
@@ -28,12 +29,11 @@ export class PlacesController {
     return places;
   }
 
-  @Get('/recommended/:address')
-  async getRecommendPlace(@Param('address') address: string) {
-    const recommendedPlace = await this.placeService.getRecommendedPlace(
-      address,
-    );
+  @Get('/recommended/list/:address/restaurants')
+  async getRecommendRestaurants(@Param('address') address: string) {
+    const recommendedRestaurants: RecommendedRestaurants =
+      await this.placeService.getRecommendRestaurants(address);
 
-    return recommendedPlace;
+    return recommendedRestaurants;
   }
 }
