@@ -14,7 +14,7 @@ import {
   PlaceInformation,
   PlacesCreateInput,
   PlacesCreateManyInput,
-  RecommendedRestaurants,
+  RecommendedPlaces,
 } from './interface/places.interface';
 import { parseStringPromise } from 'xml2js';
 import {
@@ -350,56 +350,21 @@ export class PlacesService {
     return categoryId.id;
   }
 
-  async getRecommendRestaurants(
+  async getRecommendPlace(
     address: string,
-  ): Promise<RecommendedRestaurants> {
+    target: RecommendedTarget,
+  ): Promise<RecommendedPlaces> {
     const extractAddress: ExtractAddress = await this.getExtractAddress(
       address,
     );
-    const recommendedPlaces = await this.getRecommendedPlace(
-      extractAddress,
-      RecommendedTarget.RESTAURANT,
+    const recommendedPlaces: PlaceInformation[] =
+      await this.getRecommendedPlaceBySearchApi(extractAddress, target);
+
+    const createdPlaces: RecommendedPlaces = await this.createRecommendPlaces(
+      recommendedPlaces,
     );
 
-    const selectedPlaces: Place[] = [];
-    const placeDataToCreate: PlacesCreateManyInput[] = [];
-
-    for (const recommendedPlace of recommendedPlaces) {
-      const extractAddress: ExtractAddress = await this.getExtractAddress(
-        recommendedPlace.address,
-      );
-
-      const selectedPlace: Place = await this.getPlaceByTitleAndAddress(
-        recommendedPlace.title,
-        extractAddress,
-      );
-
-      if (!selectedPlace) {
-        const placeDetails: CrawledNaverPlaceInformations =
-          await this.crawlPlaceDetails(recommendedPlace.title);
-
-        const category_id: number = await this.getPlaceCategoryId(
-          recommendedPlace.category,
-        );
-        delete recommendedPlace.category;
-
-        const data = {
-          ...recommendedPlace,
-          naver_place_id: placeDetails.naverPlaceId,
-          thum_url: placeDetails.thumUrl,
-          region_id: extractAddress.regionId,
-          address: extractAddress.detailAddress,
-          category_id,
-        };
-
-        placeDataToCreate.push(data);
-      } else {
-        selectedPlaces.push(selectedPlace);
-      }
-    }
-    await this.prisma.places.createMany({ data: placeDataToCreate });
-
-    return { selectedPlaces, placeDataToCreate };
+    return createdPlaces;
   }
 
   private async getExtractAddress(address: string): Promise<ExtractAddress> {
@@ -422,7 +387,7 @@ export class PlacesService {
     return extractAddress;
   }
 
-  private async getRecommendedPlace(
+  private async getRecommendedPlaceBySearchApi(
     extractAddress: ExtractAddress,
     target: RecommendedTarget,
   ) {
@@ -479,6 +444,48 @@ export class PlacesService {
         place_category: { select: { main: true, sub: true } },
       },
     });
+
     return selectedPlace;
+  }
+
+  private async createRecommendPlaces(recommendedPlaces: PlaceInformation[]) {
+    const selectedPlaces: Place[] = [];
+    const placeDataToCreate: PlacesCreateManyInput[] = [];
+
+    for (const recommendedPlace of recommendedPlaces) {
+      const extractAddress: ExtractAddress = await this.getExtractAddress(
+        recommendedPlace.address,
+      );
+
+      const selectedPlace: Place = await this.getPlaceByTitleAndAddress(
+        recommendedPlace.title,
+        extractAddress,
+      );
+      if (!selectedPlace) {
+        const placeDetails: CrawledNaverPlaceInformations =
+          await this.crawlPlaceDetails(recommendedPlace.title);
+
+        const category_id: number = await this.getPlaceCategoryId(
+          recommendedPlace.category,
+        );
+        delete recommendedPlace.category;
+
+        const data = {
+          ...recommendedPlace,
+          naver_place_id: placeDetails.naverPlaceId,
+          thum_url: placeDetails.thumUrl,
+          region_id: extractAddress.regionId,
+          address: extractAddress.detailAddress,
+          category_id,
+        };
+
+        placeDataToCreate.push(data);
+      } else {
+        selectedPlaces.push(selectedPlace);
+      }
+    }
+    await this.prisma.places.createMany({ data: placeDataToCreate });
+
+    return { selectedPlaces, placeDataToCreate };
   }
 }

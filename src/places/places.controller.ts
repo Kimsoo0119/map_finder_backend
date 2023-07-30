@@ -5,8 +5,9 @@ import {
   Place,
   PlaceInformation,
   PlacesCreateInput,
-  RecommendedRestaurants,
+  RecommendedPlaces,
 } from './interface/places.interface';
+import { RecommendedTarget } from './enum/place.enum';
 
 @Controller('places')
 export class PlacesController {
@@ -29,11 +30,36 @@ export class PlacesController {
     return places;
   }
 
-  @Get('/recommended/list/:address/restaurants')
+  @Get('/recommended/list/:address/restaurant')
   async getRecommendRestaurants(@Param('address') address: string) {
-    const recommendedRestaurants: RecommendedRestaurants =
-      await this.placeService.getRecommendRestaurants(address);
+    const recommendedRestaurants: RecommendedPlaces =
+      await this.placeService.getRecommendPlace(
+        address,
+        RecommendedTarget.RESTAURANT,
+      );
 
     return recommendedRestaurants;
+  }
+
+  @Get('/recommended/list/:address/accommodation')
+  async getRecommendAccommodations(@Param('address') address: string) {
+    const recommendedAccommodations: RecommendedPlaces =
+      await this.placeService.getRecommendPlace(
+        address,
+        RecommendedTarget.ACCOMMODATION,
+      );
+
+    return recommendedAccommodations;
+  }
+
+  @Get('/recommended/list/:address/cafe')
+  async getRecommendCafes(@Param('address') address: string) {
+    const recommendCafes: RecommendedPlaces =
+      await this.placeService.getRecommendPlace(
+        address,
+        RecommendedTarget.CAFE,
+      );
+
+    return recommendCafes;
   }
 }

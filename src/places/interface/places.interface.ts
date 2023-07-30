@@ -96,7 +96,7 @@ export interface PlacesCreateManyInput {
   is_init?: boolean;
 }
 
-export interface RecommendedRestaurants {
+export interface RecommendedPlaces {
   selectedPlaces: Place[];
   placeDataToCreate: PlacesCreateManyInput[];
 }
