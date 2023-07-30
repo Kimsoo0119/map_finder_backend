@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -11,8 +12,9 @@ import {
   ExtractAddress,
   Place,
   PlaceInformation,
-  PlaceSummary,
   PlacesCreateInput,
+  PlacesCreateManyInput,
+  RecommendedPlaces,
 } from './interface/places.interface';
 import { parseStringPromise } from 'xml2js';
 import {
@@ -22,7 +24,10 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { load } from 'cheerio';
 import { ConfigService } from '@nestjs/config';
-import { PlaceCategories, Places } from '@prisma/client';
+import { PlaceCategories, Places, Prisma } from '@prisma/client';
+import { RecommendedTarget } from './enum/place.enum';
+import { data } from 'cheerio/lib/api/attributes';
+import { response } from 'express';
 
 @Injectable()
 export class PlacesService {
@@ -60,20 +65,10 @@ export class PlacesService {
       this.extractDistrictAndAddress(address);
     place.address = extractAddress.detailAddress;
 
-    const selectedPlace: Place = await this.prisma.places.findFirst({
-      where: { title, address: extractAddress.detailAddress },
-      select: {
-        id: true,
-        address: true,
-        telephone: true,
-        stars: true,
-        naver_reviewer_counts: true,
-        naver_stars: true,
-        thum_url: true,
-        region: { select: { administrative_district: true, district: true } },
-        place_category: { select: { main: true, sub: true } },
-      },
-    });
+    const selectedPlace: Place = await this.getPlaceByTitleAndAddress(
+      title,
+      extractAddress,
+    );
     if (!selectedPlace) {
       const crawledPlace: CrawledPlace = await this.crawlNaverPlace(
         place.title,
@@ -94,6 +89,25 @@ export class PlacesService {
       }
 
       return createdPlace;
+    }
+
+    if (!selectedPlace.is_init) {
+      const { naver_stars, naver_reviewer_counts, naverReviews } =
+        await this.crawlNaverReviewsAndStars(selectedPlace.naver_place_id);
+      const placeDataToUpdate = {
+        naver_stars,
+        naver_reviewer_counts,
+        is_init: true,
+      };
+
+      await this.prisma.places.update({
+        where: { id: selectedPlace.id },
+        data: { ...placeDataToUpdate },
+      });
+
+      if (naverReviews) {
+        await this.createNaverReviews(selectedPlace.id, naverReviews);
+      }
     }
 
     return selectedPlace;
@@ -200,12 +214,14 @@ export class PlacesService {
       data: { ...placeDataToCreate },
       select: {
         id: true,
+        title: true,
         address: true,
         telephone: true,
         stars: true,
         naver_reviewer_counts: true,
         naver_stars: true,
         thum_url: true,
+        is_init: true,
         region: { select: { administrative_district: true, district: true } },
         place_category: { select: { main: true, sub: true } },
       },
@@ -236,12 +252,15 @@ export class PlacesService {
       display: 5,
     };
 
-    const { data } = await axios.get(this.naverLocalSearchApiUrl, {
+    const response = await axios.get(this.naverLocalSearchApiUrl, {
       headers: this.apiHeaders,
       params,
     });
+    if (!response.data) {
+      throw new InternalServerErrorException(`요청 실패`);
+    }
 
-    const parsedData = await parseStringPromise(data, {
+    const parsedData = await parseStringPromise(response.data, {
       explicitArray: false,
       ignoreAttrs: true,
     });
@@ -265,8 +284,6 @@ export class PlacesService {
       category: place.category,
       address: place.address,
       telephone: place.telephone,
-      mapX: place.mapx,
-      mapY: place.mapy,
     };
   }
 
@@ -333,21 +350,27 @@ export class PlacesService {
     return categoryId.id;
   }
 
-  async getRecommendedPlace(address: string) {
-    const selectedRegionId = await this.getAddressRegionIdAddress(address);
+  async getRecommendPlace(
+    address: string,
+    target: RecommendedTarget,
+  ): Promise<RecommendedPlaces> {
+    const extractAddress: ExtractAddress = await this.getExtractAddress(
+      address,
+    );
+    const recommendedPlaces: PlaceInformation[] =
+      await this.getRecommendedPlaceBySearchApi(extractAddress, target);
 
-    const recommendedPlace = await this.prisma.places.findMany({
-      where: {
-        region_id: selectedRegionId,
-      },
-    });
+    const createdPlaces: RecommendedPlaces = await this.createRecommendPlaces(
+      recommendedPlaces,
+    );
+
+    return createdPlaces;
   }
 
-  private async getAddressRegionIdAddress(address: string): Promise<number> {
+  private async getExtractAddress(address: string): Promise<ExtractAddress> {
     const extractAddress: ExtractAddress =
       this.extractDistrictAndAddress(address);
-
-    const { id } = await this.prisma.regions.findFirst({
+    const region = await this.prisma.regions.findFirst({
       where: {
         administrative_district: extractAddress.administrativeDistrict,
         district: extractAddress.district,
@@ -356,6 +379,113 @@ export class PlacesService {
         id: true,
       },
     });
-    return id;
+    if (!region) {
+      throw new BadRequestException(`잘못된 주소 형식입니다.`);
+    }
+    extractAddress.regionId = region.id;
+
+    return extractAddress;
+  }
+
+  private async getRecommendedPlaceBySearchApi(
+    extractAddress: ExtractAddress,
+    target: RecommendedTarget,
+  ) {
+    const params = {
+      query: `${extractAddress.district} ${extractAddress.detailAddress}${target}`,
+      display: 10,
+      sort: 'comment',
+    };
+
+    const response = await axios.get(this.naverLocalSearchApiUrl, {
+      headers: this.apiHeaders,
+      params,
+    });
+    if (!response.data) {
+      throw new InternalServerErrorException(`요청 실패`);
+    }
+
+    const parsedData = await parseStringPromise(response.data, {
+      explicitArray: false,
+      ignoreAttrs: true,
+    });
+
+    const places = parsedData?.rss?.channel?.item ?? null;
+
+    if (!places) {
+      return [];
+    }
+
+    const placeInformations: Array<PlaceInformation> = Array.isArray(places)
+      ? places.map((place) => this.mapPlace(place))
+      : [this.mapPlace(places)];
+
+    return placeInformations;
+  }
+
+  private async getPlaceByTitleAndAddress(
+    title: string,
+    extractAddress: ExtractAddress,
+  ): Promise<Place> {
+    const selectedPlace: Place = await this.prisma.places.findFirst({
+      where: { title, address: extractAddress.detailAddress },
+      select: {
+        id: true,
+        title: true,
+        address: true,
+        telephone: true,
+        stars: true,
+        naver_reviewer_counts: true,
+        naver_stars: true,
+        thum_url: true,
+        is_init: true,
+        naver_place_id: true,
+        region: { select: { administrative_district: true, district: true } },
+        place_category: { select: { main: true, sub: true } },
+      },
+    });
+
+    return selectedPlace;
+  }
+
+  private async createRecommendPlaces(recommendedPlaces: PlaceInformation[]) {
+    const selectedPlaces: Place[] = [];
+    const placeDataToCreate: PlacesCreateManyInput[] = [];
+
+    for (const recommendedPlace of recommendedPlaces) {
+      const extractAddress: ExtractAddress = await this.getExtractAddress(
+        recommendedPlace.address,
+      );
+
+      const selectedPlace: Place = await this.getPlaceByTitleAndAddress(
+        recommendedPlace.title,
+        extractAddress,
+      );
+      if (!selectedPlace) {
+        const placeDetails: CrawledNaverPlaceInformations =
+          await this.crawlPlaceDetails(recommendedPlace.title);
+
+        const category_id: number = await this.getPlaceCategoryId(
+          recommendedPlace.category,
+        );
+        delete recommendedPlace.category;
+
+        const data = {
+          ...recommendedPlace,
+          naver_place_id: placeDetails.naverPlaceId,
+          thum_url: placeDetails.thumUrl,
+          region_id: extractAddress.regionId,
+          address: extractAddress.detailAddress,
+          category_id,
+        };
+
+        placeDataToCreate.push(data);
+      } else {
+        selectedPlaces.push(selectedPlace);
+      }
+    }
+    await this.prisma.places.createMany({ data: placeDataToCreate });
+
+    return { selectedPlaces, placeDataToCreate };
   }
 }

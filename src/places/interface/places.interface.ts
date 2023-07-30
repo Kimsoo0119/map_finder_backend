@@ -3,11 +3,14 @@ import { NaverReview } from 'src/common/interface/common-interface';
 export interface Place {
   address: string;
   id: number;
+  title: string;
   telephone: string;
   stars: string;
   naver_reviewer_counts: string;
   naver_stars: string;
   thum_url: string;
+  is_init: boolean;
+  naver_place_id?: string;
   region: {
     district: string;
     administrative_district: string;
@@ -26,8 +29,7 @@ export interface PlaceInformation {
   address?: string;
   telephone?: string;
   starts?: number;
-  mapX?: number;
-  mapY?: number;
+  category_id?: number;
   naver_reviewer_counts?: string;
   naver_stars?: string;
   thum_url?: string;
@@ -64,6 +66,7 @@ export interface ExtractAddress {
   administrativeDistrict: string;
   district: string;
   detailAddress: string;
+  regionId?: number;
 }
 
 export interface CrawledNaverPlace {
@@ -72,7 +75,28 @@ export interface CrawledNaverPlace {
   naver_stars: string;
   naver_reviewer_counts: string;
 }
+
 export interface CrawledPlace {
   placeInfo: CrawledNaverPlace;
   naverReviews: any[];
+}
+
+export interface PlacesCreateManyInput {
+  id?: number;
+  title: string;
+  region_id?: number | null;
+  address: string;
+  category_id: number;
+  thum_url?: string | null;
+  telephone?: string | null;
+  stars?: string | null;
+  naver_place_id?: string | null;
+  naver_stars?: string | null;
+  naver_reviewer_counts?: string | null;
+  is_init?: boolean;
+}
+
+export interface RecommendedPlaces {
+  selectedPlaces: Place[];
+  placeDataToCreate: PlacesCreateManyInput[];
 }

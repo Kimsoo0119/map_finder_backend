@@ -6,7 +6,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
+import {
+  PrismaClientKnownRequestError,
+  PrismaClientValidationError,
+} from '@prisma/client/runtime';
 import { Request, Response } from 'express';
 
 @Catch(
@@ -83,6 +86,9 @@ export class PrismaExceptionFilter implements ExceptionFilter {
         break;
 
       case Prisma.PrismaClientValidationError:
+        meta = exception as PrismaClientValidationError;
+        console.log(meta);
+
         status = HttpStatus.UNPROCESSABLE_ENTITY;
         logMessage = exception.message;
         message = '잘못된 형식의 요청입니다. 확인 후 재시도 해주세요';
