@@ -95,8 +95,3 @@ export interface PlacesCreateManyInput {
   naver_reviewer_counts?: string | null;
   is_init?: boolean;
 }
-
-export interface RecommendedPlaces {
-  selectedPlaces: Place[];
-  placeDataToCreate: PlacesCreateManyInput[];
-}
