@@ -210,7 +210,7 @@ export class PlacesService {
     placeDataToCreate.region_id = selectedRegion.id;
 
     const createdPlace: Place = await this.prisma.places.create({
-      data: { ...placeDataToCreate },
+      data: { ...placeDataToCreate, is_init: true },
       select: {
         id: true,
         title: true,
@@ -391,7 +391,7 @@ export class PlacesService {
     target: RecommendedTarget,
   ) {
     const params = {
-      query: `${extractAddress.district} ${extractAddress.detailAddress}${target}`,
+      query: `경리단길${target}`,
       display: '5',
       sort: 'comment',
     };
