@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from 'src/common/interface/common-interface';
 import { Response } from 'express';
@@ -46,5 +46,17 @@ export class AuthController {
     });
 
     return { accessToken, msg: '토큰 재발급 완료' };
+  }
+
+  @Delete('/logout')
+  @UseGuards(AccessTokenGuard)
+  async logOut(
+    @GetAuthorizedUser() authorizedUser: User,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.authService.deleteRefreshToken(authorizedUser.id);
+    response.clearCookie('refreshToken');
+
+    return { success: true, msg: '로그아웃 완료' };
   }
 }

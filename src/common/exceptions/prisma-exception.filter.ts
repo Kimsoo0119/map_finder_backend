@@ -40,7 +40,6 @@ export class PrismaExceptionFilter implements ExceptionFilter {
     let logMessage;
     let code;
     let meta;
-    console.log(exception);
 
     switch (exception.constructor) {
       case Prisma.PrismaClientInitializationError:
@@ -87,8 +86,6 @@ export class PrismaExceptionFilter implements ExceptionFilter {
 
       case Prisma.PrismaClientValidationError:
         meta = exception as PrismaClientValidationError;
-        console.log(meta);
-
         status = HttpStatus.UNPROCESSABLE_ENTITY;
         logMessage = exception.message;
         message = '잘못된 형식의 요청입니다. 확인 후 재시도 해주세요';
