@@ -47,8 +47,4 @@ export class AuthController {
 
     return { accessToken, msg: '토큰 재발급 완료' };
   }
-
-  @Get('/test')
-  @UseGuards(AccessTokenGuard)
-  test(@GetAuthorizedUser() user) {}
 }
