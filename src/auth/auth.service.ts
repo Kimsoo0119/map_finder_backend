@@ -151,4 +151,8 @@ export class AuthService {
       );
     }
   }
+
+  async deleteRefreshToken(userId: number) {
+    await this.cacheManager.del(`${userId}`);
+  }
 }
