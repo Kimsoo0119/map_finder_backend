@@ -99,16 +99,31 @@ export class PlacesService {
         is_init: true,
       };
 
-      await this.prisma.places.update({
+      const updatedPlace = await this.prisma.places.update({
         where: { id: selectedPlace.id },
         data: { ...placeDataToUpdate },
+        select: {
+          id: true,
+          title: true,
+          address: true,
+          telephone: true,
+          stars: true,
+          naver_reviewer_counts: true,
+          naver_stars: true,
+          thum_url: true,
+          is_init: true,
+          naver_place_id: true,
+          region: { select: { administrative_district: true, district: true } },
+          place_category: { select: { main: true, sub: true } },
+        },
       });
 
       if (naverReviews) {
         await this.createNaverReviews(selectedPlace.id, naverReviews);
       }
-    }
 
+      return updatedPlace;
+    }
     return selectedPlace;
   }
 
@@ -391,7 +406,7 @@ export class PlacesService {
     target: RecommendedTarget,
   ) {
     const params = {
-      query: `경리단길${target}`,
+      query: `${extractAddress.district} ${extractAddress.detailAddress}${target}`,
       display: '5',
       sort: 'comment',
     };
