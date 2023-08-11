@@ -14,7 +14,6 @@ import {
   PlaceInformation,
   PlacesCreateInput,
   PlacesCreateManyInput,
-  RecommendedPlaces,
 } from './interface/places.interface';
 import { parseStringPromise } from 'xml2js';
 import {
@@ -100,16 +99,31 @@ export class PlacesService {
         is_init: true,
       };
 
-      await this.prisma.places.update({
+      const updatedPlace = await this.prisma.places.update({
         where: { id: selectedPlace.id },
         data: { ...placeDataToUpdate },
+        select: {
+          id: true,
+          title: true,
+          address: true,
+          telephone: true,
+          stars: true,
+          naver_reviewer_counts: true,
+          naver_stars: true,
+          thum_url: true,
+          is_init: true,
+          naver_place_id: true,
+          region: { select: { administrative_district: true, district: true } },
+          place_category: { select: { main: true, sub: true } },
+        },
       });
 
       if (naverReviews) {
         await this.createNaverReviews(selectedPlace.id, naverReviews);
       }
-    }
 
+      return updatedPlace;
+    }
     return selectedPlace;
   }
 
@@ -211,7 +225,7 @@ export class PlacesService {
     placeDataToCreate.region_id = selectedRegion.id;
 
     const createdPlace: Place = await this.prisma.places.create({
-      data: { ...placeDataToCreate },
+      data: { ...placeDataToCreate, is_init: true },
       select: {
         id: true,
         title: true,
@@ -353,18 +367,18 @@ export class PlacesService {
   async getRecommendPlace(
     address: string,
     target: RecommendedTarget,
-  ): Promise<RecommendedPlaces> {
+  ): Promise<Place[]> {
     const extractAddress: ExtractAddress = await this.getExtractAddress(
       address,
     );
-    const recommendedPlaces: PlaceInformation[] =
+    const searchedPlaces: PlaceInformation[] =
       await this.getRecommendedPlaceBySearchApi(extractAddress, target);
 
-    const createdPlaces: RecommendedPlaces = await this.createRecommendPlaces(
-      recommendedPlaces,
+    const recommendedPlaces: Place[] = await this.createRecommendPlaces(
+      searchedPlaces,
     );
 
-    return createdPlaces;
+    return recommendedPlaces;
   }
 
   private async getExtractAddress(address: string): Promise<ExtractAddress> {
@@ -393,7 +407,7 @@ export class PlacesService {
   ) {
     const params = {
       query: `${extractAddress.district} ${extractAddress.detailAddress}${target}`,
-      display: 10,
+      display: '5',
       sort: 'comment',
     };
 
@@ -401,6 +415,7 @@ export class PlacesService {
       headers: this.apiHeaders,
       params,
     });
+
     if (!response.data) {
       throw new InternalServerErrorException(`요청 실패`);
     }
@@ -484,8 +499,30 @@ export class PlacesService {
         selectedPlaces.push(selectedPlace);
       }
     }
+
     await this.prisma.places.createMany({ data: placeDataToCreate });
 
-    return { selectedPlaces, placeDataToCreate };
+    for (const placeData of placeDataToCreate) {
+      const selectedPlace: Place = await this.prisma.places.findFirst({
+        where: { title: placeData.title, address: placeData.address },
+        select: {
+          id: true,
+          title: true,
+          address: true,
+          telephone: true,
+          stars: true,
+          naver_reviewer_counts: true,
+          naver_stars: true,
+          thum_url: true,
+          is_init: true,
+          naver_place_id: true,
+          region: { select: { administrative_district: true, district: true } },
+          place_category: { select: { main: true, sub: true } },
+        },
+      });
+      selectedPlaces.push(selectedPlace);
+    }
+
+    return selectedPlaces;
   }
 }

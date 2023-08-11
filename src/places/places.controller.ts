@@ -1,12 +1,7 @@
 import { Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { PlaceDto } from './dto/place.dto';
 import { PlacesService } from './places.service';
-import {
-  Place,
-  PlaceInformation,
-  PlacesCreateInput,
-  RecommendedPlaces,
-} from './interface/places.interface';
+import { Place, PlaceInformation } from './interface/places.interface';
 import { RecommendedTarget } from './enum/place.enum';
 
 @Controller('places')
@@ -32,7 +27,7 @@ export class PlacesController {
 
   @Get('/recommended/list/:address/restaurant')
   async getRecommendRestaurants(@Param('address') address: string) {
-    const recommendedRestaurants: RecommendedPlaces =
+    const recommendedRestaurants: Place[] =
       await this.placeService.getRecommendPlace(
         address,
         RecommendedTarget.RESTAURANT,
@@ -43,7 +38,7 @@ export class PlacesController {
 
   @Get('/recommended/list/:address/accommodation')
   async getRecommendAccommodations(@Param('address') address: string) {
-    const recommendedAccommodations: RecommendedPlaces =
+    const recommendedAccommodations: Place[] =
       await this.placeService.getRecommendPlace(
         address,
         RecommendedTarget.ACCOMMODATION,
@@ -54,11 +49,10 @@ export class PlacesController {
 
   @Get('/recommended/list/:address/cafe')
   async getRecommendCafes(@Param('address') address: string) {
-    const recommendCafes: RecommendedPlaces =
-      await this.placeService.getRecommendPlace(
-        address,
-        RecommendedTarget.CAFE,
-      );
+    const recommendCafes: Place[] = await this.placeService.getRecommendPlace(
+      address,
+      RecommendedTarget.CAFE,
+    );
 
     return recommendCafes;
   }
