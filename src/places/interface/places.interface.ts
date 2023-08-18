@@ -21,6 +21,13 @@ export interface Place {
   };
 }
 
+export interface PlaceDataToUpdate {
+  naver_stars?: string;
+  naver_reviewer_counts?: string;
+  is_init?: boolean;
+  title?: string;
+}
+
 export interface PlaceInformation {
   id?: number;
   title: string;
