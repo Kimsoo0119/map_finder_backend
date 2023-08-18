@@ -11,6 +11,7 @@ import {
   CrawledPlace,
   ExtractAddress,
   Place,
+  PlaceDataToUpdate,
   PlaceInformation,
   PlacesCreateInput,
   PlacesCreateManyInput,
@@ -68,55 +69,54 @@ export class PlacesService {
       title,
       extractAddress,
     );
+
     if (!selectedPlace) {
-      const crawledPlace: CrawledPlace = await this.crawlNaverPlace(
-        place.title,
+      const { naverPlaceId, thumUrl: thum_url }: CrawledNaverPlaceInformations =
+        await this.crawlNaverPlace(title);
+
+      const updatedPlace: Place = await this.checkPlaceAndUpdate(
+        title,
+        naverPlaceId,
       );
-      const placeDataToCreate: PlacesCreateInput = await this.createPlaceData(
-        place,
-        crawledPlace,
-      );
-      const createdPlace: Place = await this.createPlace(
-        placeDataToCreate,
-        extractAddress,
-      );
-      if (crawledPlace.naverReviews) {
-        await this.createNaverReviews(
-          createdPlace.id,
-          crawledPlace.naverReviews,
+      if (!updatedPlace) {
+        const crawledPlaceInfo: CrawledPlace =
+          await this.createCrawledPlaceInfo(naverPlaceId, thum_url);
+
+        const placeDataToCreate: PlacesCreateInput = await this.createPlaceData(
+          place,
+          crawledPlaceInfo,
         );
+
+        const createdPlace: Place = await this.createPlace(
+          placeDataToCreate,
+          extractAddress,
+        );
+        if (crawledPlaceInfo.naverReviews) {
+          await this.createNaverReviews(
+            createdPlace.id,
+            crawledPlaceInfo.naverReviews,
+          );
+        }
+
+        return createdPlace;
       }
 
-      return createdPlace;
+      return updatedPlace;
     }
 
     if (!selectedPlace.is_init) {
       const { naver_stars, naver_reviewer_counts, naverReviews } =
         await this.crawlNaverReviewsAndStars(selectedPlace.naver_place_id);
-      const placeDataToUpdate = {
+      const placeDataToUpdate: PlaceDataToUpdate = {
         naver_stars,
         naver_reviewer_counts,
         is_init: true,
       };
 
-      const updatedPlace = await this.prisma.places.update({
-        where: { id: selectedPlace.id },
-        data: { ...placeDataToUpdate },
-        select: {
-          id: true,
-          title: true,
-          address: true,
-          telephone: true,
-          stars: true,
-          naver_reviewer_counts: true,
-          naver_stars: true,
-          thum_url: true,
-          is_init: true,
-          naver_place_id: true,
-          region: { select: { administrative_district: true, district: true } },
-          place_category: { select: { main: true, sub: true } },
-        },
-      });
+      const updatedPlace: Place = await this.updatePlace(
+        selectedPlace.id,
+        placeDataToUpdate,
+      );
 
       if (naverReviews) {
         await this.createNaverReviews(selectedPlace.id, naverReviews);
@@ -142,13 +142,13 @@ export class PlacesService {
     return placeDataToCreate;
   }
 
-  private async crawlNaverPlace(title: string): Promise<{
+  private async createCrawledPlaceInfo(
+    naverPlaceId: string,
+    thum_url: string,
+  ): Promise<{
     placeInfo: CrawledNaverPlace;
     naverReviews: any[];
   }> {
-    const { naverPlaceId, thumUrl: thum_url }: CrawledNaverPlaceInformations =
-      await this.crawlPlaceDetails(title);
-
     const { naver_stars, naver_reviewer_counts, naverReviews } =
       await this.crawlNaverReviewsAndStars(naverPlaceId);
 
@@ -160,6 +160,22 @@ export class PlacesService {
     };
 
     return { placeInfo, naverReviews };
+  }
+
+  private async checkPlaceAndUpdate(
+    title: string,
+    naverPlaceId: string,
+  ): Promise<Place> {
+    const selectedPlace = await this.prisma.places.findFirst({
+      where: { naver_place_id: naverPlaceId },
+      select: { id: true, title: true },
+    });
+    if (selectedPlace.id) {
+      const updatedPlace: Place = await this.updatePlace(selectedPlace.id, {
+        title,
+      });
+      return updatedPlace;
+    }
   }
 
   private async crawlNaverReviewsAndStars(naverPlaceId: string) {
@@ -260,6 +276,31 @@ export class PlacesService {
     });
   }
 
+  private async updatePlace(
+    placeId: number,
+    placeDataToUpdate: PlaceDataToUpdate,
+  ): Promise<Place> {
+    const updatedPlace = await this.prisma.places.update({
+      where: { id: placeId },
+      data: { ...placeDataToUpdate },
+      select: {
+        id: true,
+        title: true,
+        address: true,
+        telephone: true,
+        stars: true,
+        naver_reviewer_counts: true,
+        naver_stars: true,
+        thum_url: true,
+        is_init: true,
+        naver_place_id: true,
+        region: { select: { administrative_district: true, district: true } },
+        place_category: { select: { main: true, sub: true } },
+      },
+    });
+    return updatedPlace;
+  }
+
   async getPlacesWithNaver(placeTitle: string): Promise<PlaceInformation[]> {
     const params = {
       query: placeTitle,
@@ -294,16 +335,14 @@ export class PlacesService {
 
   private mapPlace(place): PlaceInformation {
     return {
-      title: place.title.replace(/(<([^>]+)>)/gi, ''),
+      title: place.title.replace(/<([^>]+)>|&amp;/gi, ''),
       category: place.category,
       address: place.address,
       telephone: place.telephone,
     };
   }
 
-  private async crawlPlaceDetails(
-    title,
-  ): Promise<CrawledNaverPlaceInformations> {
+  private async crawlNaverPlace(title): Promise<CrawledNaverPlaceInformations> {
     const naverPlaceUrl = `${this.naverMapUrl}?query=${title}${this.naverMapUrlOption}`;
 
     const { data } = await axios.get(naverPlaceUrl, {
@@ -478,7 +517,7 @@ export class PlacesService {
       );
       if (!selectedPlace) {
         const placeDetails: CrawledNaverPlaceInformations =
-          await this.crawlPlaceDetails(recommendedPlace.title);
+          await this.crawlNaverPlace(recommendedPlace.title);
 
         const category_id: number = await this.getPlaceCategoryId(
           recommendedPlace.category,
